@@ -1,0 +1,30 @@
+﻿{
+    "packageName": "Cloudmersive.APIClient.NET.MultiThreatScan",
+    "packageVersion": "5.0.0",
+
+
+    "packageTitle":       "Cloudmersive Multi-Threat Scan API Client",
+    "packageDescription": "Cloudmersive Multi-Threat Scan allows you to scan files, URLs, and text for multiptle types of threats including viruses, malware, trojans, ransomware, spyware, ai content, fraud, spam, phishing, not-safe-for-work, and many other types of threats.  Multi-factor scanning across many delivery methods including polymorphic and multipartite.  Scanning supports files, archives, and recursive file formats.",
+    "packageAuthors":     "Cloudmersive LLC",
+    "packageCompany":     "Cloudmersive LLC",
+    "packageProjectUrl":  "https://cloudmersive.com/multi-threat-scan-api",
+    "packageUrl":  "https://cloudmersive.com/multi-threat-scan-api",
+    "packageIconUrl":     "https://cloudmersive.com/images/cmsdk.png",
+    "packageTags":        "multi-threat scan security malware cloudmersive",
+    "releaseNote":        "Change to HttpClient core",
+
+    "gitHost":   "github.com",
+    "gitUserId": "Cloudmersive",
+    "gitRepoId": "Cloudmersive.APIClient.NETCore.MultiThreatScan",
+
+    "licenseId": "Apache-2.0",
+
+    "packageCopyright":          "Copyright © 2026 Cloudmersive, LLC.",
+
+    "packageGuid": "e536623e-1d96-4b2e-be3f-2771304d24d4",
+    "library": "restsharp",
+    "supportsFileParameters": true,
+    "targetFramework": "netstandard2.0",
+    "netCoreProjectFile": true
+  }
+  
