@@ -13,10 +13,10 @@ java -jar ./openapi-generator-cli-7.12.0.jar generate -i multithreat-api-swagger
 ## & npm build ./client
 
 
-$csprojpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.VirusScan/Cloudmersive.APIClient.NETCore.VirusScan.csproj
-$csprojtestpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.VirusScan.Test/Cloudmersive.APIClient.NETCore.VirusScan.Test.csproj
-#$nuspecpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.VirusScan/Cloudmersive.APIClient.NETCore.VirusScan.nuspec
-$slnpath = Resolve-Path ./client/Cloudmersive.APIClient.NETCore.VirusScan.sln
+$csprojpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.MultiThreatScan/Cloudmersive.APIClient.NETCore.MultiThreatScan.csproj
+$csprojtestpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.MultiThreatScan.Test/Cloudmersive.APIClient.NETCore.MultiThreatScan.Test.csproj
+#$nuspecpath = Resolve-Path ./client/src/Cloudmersive.APIClient.NETCore.MultiThreatScan/Cloudmersive.APIClient.NETCore.MultiThreatScan.nuspec
+$slnpath = Resolve-Path ./client/Cloudmersive.APIClient.NETCore.MultiThreatScan.sln
 
 
 # (Get-Content $nuspecpath).replace('<title>Swagger Library</title>', "<title>Image Recognition and Processing APIs</title><licenseUrl>https://www.apache.org/licenses/LICENSE-2.0.txt</licenseUrl>") | Set-Content $nuspecpath
@@ -29,7 +29,7 @@ $slnpath = Resolve-Path ./client/Cloudmersive.APIClient.NETCore.VirusScan.sln
 
 
 
-(Get-Content $csprojpath).replace('<RepositoryUrl>https://github.com/Cloudmersive/Cloudmersive.APIClient.NETCore.VirusScan.git</RepositoryUrl>', '<RepositoryUrl>https://github.com/Cloudmersive/Cloudmersive.APIClient.NETCore.VirusScan.git</RepositoryUrl><PackageProjectUrl>https://cloudmersive.com/virus-api</PackageProjectUrl><PackageIconUrl>https://cloudmersive.com/images/cmsdk.png</PackageIconUrl>') | Set-Content $csprojpath
+(Get-Content $csprojpath).replace('<RepositoryUrl>https://github.com/Cloudmersive/Cloudmersive.APIClient.NETCore.MultiThreatScan.git</RepositoryUrl>', '<RepositoryUrl>https://github.com/Cloudmersive/Cloudmersive.APIClient.NETCore.MultiThreatScan.git</RepositoryUrl><PackageProjectUrl>https://cloudmersive.com/virus-api</PackageProjectUrl><PackageIconUrl>https://cloudmersive.com/images/cmsdk.png</PackageIconUrl>') | Set-Content $csprojpath
 
 
 # RestSharp 106.6.10 - Core Project
@@ -59,8 +59,8 @@ $slnpath = Resolve-Path ./client/Cloudmersive.APIClient.NETCore.VirusScan.sln
 
 # Packages.config
 
-# (Get-Content '.\client\src\Cloudmersive.APIClient.NETCore.VirusScan\packages.config').replace('<package id="RestSharp" version="105.1.0" targetFramework="net45" developmentDependency="true" />', '<package id="RestSharp" version="106.6.10" targetFramework="net45" developmentDependency="true" />') | Set-Content '.\client\src\Cloudmersive.APIClient.NETCore.VirusScan\packages.config'
-# (Get-Content '.\client\src\Cloudmersive.APIClient.NETCore.VirusScan\Client\ApiClient.cs').replace('request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentType);', 'request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentLength, param.Value.ContentType);') | Set-Content '.\client\src\Cloudmersive.APIClient.NETCore.VirusScan\Client\ApiClient.cs'
+# (Get-Content '.\client\src\Cloudmersive.APIClient.NETCore.MultiThreatScan\packages.config').replace('<package id="RestSharp" version="105.1.0" targetFramework="net45" developmentDependency="true" />', '<package id="RestSharp" version="106.6.10" targetFramework="net45" developmentDependency="true" />') | Set-Content '.\client\src\Cloudmersive.APIClient.NETCore.MultiThreatScan\packages.config'
+# (Get-Content '.\client\src\Cloudmersive.APIClient.NETCore.MultiThreatScan\Client\ApiClient.cs').replace('request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentType);', 'request.AddFile(param.Value.Name, param.Value.Writer, param.Value.FileName, param.Value.ContentLength, param.Value.ContentType);') | Set-Content '.\client\src\Cloudmersive.APIClient.NETCore.MultiThreatScan\Client\ApiClient.cs'
 
 
 
@@ -87,7 +87,7 @@ dotnet build $slnpath -c $configuration /p:SignAssembly=true /p:AssemblyOriginat
 #$msbuild = Get-LatestMsBuild
 #& $msbuild $slnpath /t:Rebuild /p:Configuration=$configuration
 
-$builtDll = './client/src/Cloudmersive.APIClient.NETCore.VirusScan/bin/Release/netstandard2.0/Cloudmersive.APIClient.NETCore.VirusScan.dll'
+$builtDll = './client/src/Cloudmersive.APIClient.NETCore.MultiThreatScan/bin/Release/netstandard2.0/Cloudmersive.APIClient.NETCore.MultiThreatScan.dll'
 
 # --- Strong-name diagnostic helper -------------------------------------------
 function Test-StrongNameDiagnostic {

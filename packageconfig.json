@@ -15,7 +15,7 @@
 
     "gitHost":   "github.com",
     "gitUserId": "Cloudmersive",
-    "gitRepoId": "Cloudmersive.APIClient.NETCore.VirusScan",
+    "gitRepoId": "Cloudmersive.APIClient.NETCore.MultiThreatScan",
 
     "licenseId": "Apache-2.0",
 
