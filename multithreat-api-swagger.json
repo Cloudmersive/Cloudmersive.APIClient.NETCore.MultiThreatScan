@@ -1,0 +1,1867 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "multithreatscanapi",
+    "description": "Scan text, files, and URLs for multiple threat types in a single API call.",
+    "version": "v1"
+  },
+  "paths": {
+    "/multi-threat-scan/text": {
+      "post": {
+        "tags": [
+          "MultiThreat"
+        ],
+        "summary": "Scan text for multiple threat types including viruses, phishing, spam, DLP, and policy violations in a single API call.",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Text scan request with content and scan configuration",
+            "schema": {
+              "$ref": "#/definitions/MultiThreatTextRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/MultiThreatTextResponse"
+            }
+          }
+        }
+      }
+    },
+    "/multi-threat-scan/file": {
+      "post": {
+        "tags": [
+          "MultiThreat"
+        ],
+        "summary": "Scan a file for multiple threat types including viruses, NSFW, AI-generated content, fraud, phishing, spam, DLP, and policy violations in a single API call.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "inputFile",
+            "description": "The file to scan",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "in": "formData",
+            "name": "config",
+            "description": "Optional JSON scan configuration",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/MultiThreatFileResponse"
+            }
+          }
+        }
+      }
+    },
+    "/multi-threat-scan/url": {
+      "post": {
+        "tags": [
+          "MultiThreat"
+        ],
+        "summary": "Scan a URL for multiple threat types including viruses, phishing, and policy violations in a single API call. Optionally download and scan the file at the URL.",
+        "consumes": [
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "URL scan request with URL and scan configuration",
+            "schema": {
+              "$ref": "#/definitions/MultiThreatUrlRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/MultiThreatUrlResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AiContentDetectionConfig": {
+      "description": "AI-generated content detection configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable AI content detection",
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "AiContentDetectionResult": {
+      "description": "AI content detection result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no AI-generated content was detected",
+          "type": "boolean"
+        },
+        "ContainsAiGeneratedContent": {
+          "description": "Content appears to be AI-generated",
+          "type": "boolean"
+        },
+        "AiConfidenceLevel": {
+          "format": "double",
+          "description": "Confidence level of AI content detection (0.0 to 1.0)",
+          "type": "number"
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        },
+        "Verdict": {
+          "description": "Categorical assessment of whether the file appears AI-generated based on its\r\nembedded metadata. One of: NoDeterministicAiMetadataFound, VerifiedAiGenerated,\r\nVerifiedAiEditedOrComposite, LikelyAiGenerated, LikelyAiEditedOrComposite,\r\nPossibleAiGenerated, ConflictingSignals, MetadataUnavailableOrUnreadable,\r\nUnsupportedFileType.",
+          "type": "string"
+        },
+        "Provider": {
+          "description": "AI provider name (for example, \"OpenAI\", \"Adobe\", \"Google\", \"Microsoft\").\r\nEmpty when the metadata does not identify a provider.",
+          "type": "string"
+        },
+        "Generator": {
+          "description": "AI tool or product name (for example, \"ChatGPT\", \"Adobe Firefly\", \"Stable\r\nDiffusion\"). Empty when the metadata does not identify a specific tool.",
+          "type": "string"
+        },
+        "Warnings": {
+          "description": "Non-fatal warnings produced during analysis, intended for diagnostic display.\r\nEmpty when no warnings were produced.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "DetectedFileType": {
+          "description": "File type detected from the file's content (for example, \"jpeg\", \"png\", \"pdf\").\r\nMay differ from the file's name extension when the content was misnamed.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContentScanningConfig": {
+      "description": "Configuration for downloading and scanning the file at a URL",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable content scanning",
+          "type": "boolean",
+          "example": false
+        },
+        "DownloadAndScan": {
+          "description": "Download and scan the file at the URL",
+          "type": "boolean",
+          "example": true
+        },
+        "NsfwDetection": {
+          "$ref": "#/definitions/NsfwDetectionConfig"
+        },
+        "AiContentDetection": {
+          "$ref": "#/definitions/AiContentDetectionConfig"
+        },
+        "FraudDetection": {
+          "$ref": "#/definitions/FraudDetectionConfig"
+        },
+        "SpamDetection": {
+          "$ref": "#/definitions/SpamDetectionFileConfig"
+        },
+        "DlpDetection": {
+          "$ref": "#/definitions/DlpDetectionFileConfig"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ContentScanningResult": {
+      "description": "Result of content scanning (downloading and scanning a file from URL)",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether content scanning was enabled",
+          "type": "boolean"
+        },
+        "DownloadedFileFormat": {
+          "description": "Detected file format of downloaded content",
+          "type": "string"
+        },
+        "NsfwDetection": {
+          "$ref": "#/definitions/NsfwDetectionResult"
+        },
+        "AiContentDetection": {
+          "$ref": "#/definitions/AiContentDetectionResult"
+        },
+        "FraudDetection": {
+          "$ref": "#/definitions/FraudDetectionResult"
+        },
+        "SpamDetection": {
+          "$ref": "#/definitions/SpamDetectionResult"
+        },
+        "DlpDetection": {
+          "$ref": "#/definitions/DlpDetectionResult"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementResult"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DlpDetectionConfig": {
+      "description": "DLP (PII/PHI) detection configuration for text scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable DLP detection",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowEmailAddresses": {
+          "description": "Allow email addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPhoneNumbers": {
+          "description": "Allow phone numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowStreetAddresses": {
+          "description": "Allow street addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPersonNames": {
+          "description": "Allow person names",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBirthDates": {
+          "description": "Allow birth dates",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPassportNumbers": {
+          "description": "Allow passport numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDriversLicenses": {
+          "description": "Allow driver's licenses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowSocialSecurityNumbers": {
+          "description": "Allow Social Security numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTaxpayerIds": {
+          "description": "Allow taxpayer IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowCreditCardNumbers": {
+          "description": "Allow credit card numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBankAccountNumbers": {
+          "description": "Allow bank account numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowIbans": {
+          "description": "Allow IBANs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthInsuranceNumbers": {
+          "description": "Allow health insurance numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBearerTokens": {
+          "description": "Allow bearer tokens",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHttpCookies": {
+          "description": "Allow HTTP cookies",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPrivateKeys": {
+          "description": "Allow private keys",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowCredentials": {
+          "description": "Allow credentials",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDeepWebUrls": {
+          "description": "Allow deep web URLs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowSourceCode": {
+          "description": "Allow source code",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowIpAddresses": {
+          "description": "Allow IP addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowMacAddresses": {
+          "description": "Allow MAC addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthInsuranceMemberIds": {
+          "description": "Allow health insurance member IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowInjuryDiseaseReferences": {
+          "description": "Allow injury/disease references",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTreatmentTypeDescriptions": {
+          "description": "Allow treatment type descriptions",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowMedicalTreatmentDates": {
+          "description": "Allow medical treatment dates",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthPlanBeneficiaryNumbers": {
+          "description": "Allow health plan beneficiary numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTreatmentPayments": {
+          "description": "Allow treatment payments",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowVehicleIds": {
+          "description": "Allow vehicle IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDeviceIds": {
+          "description": "Allow device IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "ProvideAnalysisRationale": {
+          "description": "Provide analysis rationale",
+          "type": "boolean",
+          "example": true
+        },
+        "CustomPolicyID": {
+          "description": "Custom policy ID",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DlpDetectionFileConfig": {
+      "description": "DLP detection configuration for file scanning (extends text config with RecognitionMode)",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable DLP detection",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowEmailAddresses": {
+          "description": "Allow email addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPhoneNumbers": {
+          "description": "Allow phone numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowStreetAddresses": {
+          "description": "Allow street addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPersonNames": {
+          "description": "Allow person names",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBirthDates": {
+          "description": "Allow birth dates",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPassportNumbers": {
+          "description": "Allow passport numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDriversLicenses": {
+          "description": "Allow driver's licenses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowSocialSecurityNumbers": {
+          "description": "Allow Social Security numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTaxpayerIds": {
+          "description": "Allow taxpayer IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowCreditCardNumbers": {
+          "description": "Allow credit card numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBankAccountNumbers": {
+          "description": "Allow bank account numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowIbans": {
+          "description": "Allow IBANs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthInsuranceNumbers": {
+          "description": "Allow health insurance numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowBearerTokens": {
+          "description": "Allow bearer tokens",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHttpCookies": {
+          "description": "Allow HTTP cookies",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPrivateKeys": {
+          "description": "Allow private keys",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowCredentials": {
+          "description": "Allow credentials",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDeepWebUrls": {
+          "description": "Allow deep web URLs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowSourceCode": {
+          "description": "Allow source code",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowIpAddresses": {
+          "description": "Allow IP addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowMacAddresses": {
+          "description": "Allow MAC addresses",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthInsuranceMemberIds": {
+          "description": "Allow health insurance member IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowInjuryDiseaseReferences": {
+          "description": "Allow injury/disease references",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTreatmentTypeDescriptions": {
+          "description": "Allow treatment type descriptions",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowMedicalTreatmentDates": {
+          "description": "Allow medical treatment dates",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHealthPlanBeneficiaryNumbers": {
+          "description": "Allow health plan beneficiary numbers",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowTreatmentPayments": {
+          "description": "Allow treatment payments",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowVehicleIds": {
+          "description": "Allow vehicle IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowDeviceIds": {
+          "description": "Allow device IDs",
+          "type": "boolean",
+          "example": false
+        },
+        "ProvideAnalysisRationale": {
+          "description": "Provide analysis rationale",
+          "type": "boolean",
+          "example": true
+        },
+        "CustomPolicyID": {
+          "description": "Custom policy ID",
+          "type": "string"
+        },
+        "RecognitionMode": {
+          "description": "Recognition mode: Fast, FastPlus, FastMini",
+          "type": "string",
+          "example": "Fast"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DlpDetectionResult": {
+      "description": "DLP (PII/PHI) detection result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no PII/PHI was detected",
+          "type": "boolean"
+        },
+        "ContainsEmailAddresses": {
+          "description": "Contains email addresses",
+          "type": "boolean"
+        },
+        "ContainsPhoneNumbers": {
+          "description": "Contains phone numbers",
+          "type": "boolean"
+        },
+        "ContainsStreetAddresses": {
+          "description": "Contains street addresses",
+          "type": "boolean"
+        },
+        "ContainsPersonNames": {
+          "description": "Contains person names",
+          "type": "boolean"
+        },
+        "ContainsBirthDates": {
+          "description": "Contains birth dates",
+          "type": "boolean"
+        },
+        "ContainsPassportNumbers": {
+          "description": "Contains passport numbers",
+          "type": "boolean"
+        },
+        "ContainsDriversLicenses": {
+          "description": "Contains driver's licenses",
+          "type": "boolean"
+        },
+        "ContainsSocialSecurityNumbers": {
+          "description": "Contains Social Security numbers",
+          "type": "boolean"
+        },
+        "ContainsTaxpayerIds": {
+          "description": "Contains taxpayer IDs",
+          "type": "boolean"
+        },
+        "ContainsCreditCardNumbers": {
+          "description": "Contains credit card numbers",
+          "type": "boolean"
+        },
+        "ContainsBankAccountNumbers": {
+          "description": "Contains bank account numbers",
+          "type": "boolean"
+        },
+        "ContainsIbans": {
+          "description": "Contains IBANs",
+          "type": "boolean"
+        },
+        "ContainsHealthInsuranceNumbers": {
+          "description": "Contains health insurance numbers",
+          "type": "boolean"
+        },
+        "ContainsBearerTokens": {
+          "description": "Contains bearer tokens",
+          "type": "boolean"
+        },
+        "ContainsHttpCookies": {
+          "description": "Contains HTTP cookies",
+          "type": "boolean"
+        },
+        "ContainsPrivateKeys": {
+          "description": "Contains private keys",
+          "type": "boolean"
+        },
+        "ContainsCredentials": {
+          "description": "Contains credentials",
+          "type": "boolean"
+        },
+        "ContainsDeepWebUrls": {
+          "description": "Contains deep web URLs",
+          "type": "boolean"
+        },
+        "ContainsSourceCode": {
+          "description": "Contains source code",
+          "type": "boolean"
+        },
+        "ContainsIpAddresses": {
+          "description": "Contains IP addresses",
+          "type": "boolean"
+        },
+        "ContainsMacAddresses": {
+          "description": "Contains MAC addresses",
+          "type": "boolean"
+        },
+        "ContainsHealthInsuranceMemberIds": {
+          "description": "Contains health insurance member IDs",
+          "type": "boolean"
+        },
+        "ContainsInjuryDiseaseReferences": {
+          "description": "Contains injury/disease references",
+          "type": "boolean"
+        },
+        "ContainsTreatmentTypeDescriptions": {
+          "description": "Contains treatment type descriptions",
+          "type": "boolean"
+        },
+        "ContainsMedicalTreatmentDates": {
+          "description": "Contains medical treatment dates",
+          "type": "boolean"
+        },
+        "ContainsHealthPlanBeneficiaryNumbers": {
+          "description": "Contains health plan beneficiary numbers",
+          "type": "boolean"
+        },
+        "ContainsTreatmentPayments": {
+          "description": "Contains treatment payments",
+          "type": "boolean"
+        },
+        "ContainsVehicleIds": {
+          "description": "Contains vehicle IDs",
+          "type": "boolean"
+        },
+        "ContainsDeviceIds": {
+          "description": "Contains device IDs",
+          "type": "boolean"
+        },
+        "AnalysisRationale": {
+          "description": "Analysis rationale",
+          "type": "string"
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FileScanResults": {
+      "description": "Individual scan results for a file scan",
+      "type": "object",
+      "properties": {
+        "VirusScan": {
+          "$ref": "#/definitions/VirusScanResult"
+        },
+        "NsfwDetection": {
+          "$ref": "#/definitions/NsfwDetectionResult"
+        },
+        "AiContentDetection": {
+          "$ref": "#/definitions/AiContentDetectionResult"
+        },
+        "FraudDetection": {
+          "$ref": "#/definitions/FraudDetectionResult"
+        },
+        "PhishingDetection": {
+          "$ref": "#/definitions/PhishingDetectionFileResult"
+        },
+        "SpamDetection": {
+          "$ref": "#/definitions/SpamDetectionResult"
+        },
+        "DlpDetection": {
+          "$ref": "#/definitions/DlpDetectionResult"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementResult"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FraudDetectionConfig": {
+      "description": "Fraud detection configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable fraud detection",
+          "type": "boolean",
+          "example": true
+        },
+        "Preprocessing": {
+          "description": "Preprocessing mode: Auto or None",
+          "type": "string",
+          "example": "Auto"
+        },
+        "ResultCrossCheck": {
+          "description": "Result cross-check mode: None or Advanced",
+          "type": "string",
+          "example": "None"
+        },
+        "UserEmailAddress": {
+          "description": "User email address for verification context",
+          "type": "string"
+        },
+        "UserEmailAddressVerified": {
+          "description": "Whether the user email has been verified",
+          "type": "boolean",
+          "example": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "FraudDetectionResult": {
+      "description": "Fraud detection result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no fraud was detected",
+          "type": "boolean"
+        },
+        "FraudRiskLevel": {
+          "format": "double",
+          "description": "Fraud risk level (0.0 to 1.0)",
+          "type": "number"
+        },
+        "ContainsFinancialLiability": {
+          "description": "Document contains financial liability language",
+          "type": "boolean"
+        },
+        "ContainsSensitiveInformationCollection": {
+          "description": "Document collects sensitive information",
+          "type": "boolean"
+        },
+        "ContainsAssetTransfer": {
+          "description": "Document involves asset transfer",
+          "type": "boolean"
+        },
+        "ContainsPurchaseAgreement": {
+          "description": "Document is a purchase agreement",
+          "type": "boolean"
+        },
+        "ContainsEmploymentAgreement": {
+          "description": "Document is an employment agreement",
+          "type": "boolean"
+        },
+        "ContainsExpiredDocument": {
+          "description": "Document is expired",
+          "type": "boolean"
+        },
+        "ContainsAiGeneratedContent": {
+          "description": "Document contains AI-generated content",
+          "type": "boolean"
+        },
+        "AnalysisRationale": {
+          "description": "Analysis rationale",
+          "type": "string"
+        },
+        "DocumentClass": {
+          "description": "Document class/type",
+          "type": "string"
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultiThreatFileResponse": {
+      "description": "Response from a multi-threat file scan",
+      "type": "object",
+      "properties": {
+        "Successful": {
+          "description": "True if the scan completed successfully",
+          "type": "boolean",
+          "example": true
+        },
+        "CleanResult": {
+          "description": "True if all enabled scans returned clean results",
+          "type": "boolean",
+          "example": true
+        },
+        "VerifiedFileFormat": {
+          "description": "Content-verified file format from virus scan",
+          "type": "string",
+          "example": ".pdf"
+        },
+        "ScanResults": {
+          "$ref": "#/definitions/FileScanResults"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultiThreatTextRequest": {
+      "description": "Request to scan text for multiple threat types",
+      "type": "object",
+      "properties": {
+        "TextContent": {
+          "description": "The text content to scan",
+          "type": "string",
+          "example": "Check out this amazing offer at http://example.com"
+        },
+        "VirusScan": {
+          "$ref": "#/definitions/VirusScanConfig"
+        },
+        "PhishingDetection": {
+          "$ref": "#/definitions/PhishingDetectionTextConfig"
+        },
+        "SpamDetection": {
+          "$ref": "#/definitions/SpamDetectionConfig"
+        },
+        "DlpDetection": {
+          "$ref": "#/definitions/DlpDetectionConfig"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultiThreatTextResponse": {
+      "description": "Response from a multi-threat text scan",
+      "type": "object",
+      "properties": {
+        "Successful": {
+          "description": "True if the scan completed successfully",
+          "type": "boolean",
+          "example": true
+        },
+        "CleanResult": {
+          "description": "True if all enabled scans returned clean results",
+          "type": "boolean",
+          "example": true
+        },
+        "ScanResults": {
+          "$ref": "#/definitions/TextScanResults"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultiThreatUrlRequest": {
+      "description": "Request to scan a URL for multiple threat types",
+      "type": "object",
+      "properties": {
+        "Url": {
+          "description": "The URL to scan (must include http:// or https://)",
+          "type": "string",
+          "example": "https://example.com"
+        },
+        "VirusScan": {
+          "$ref": "#/definitions/UrlVirusScanConfig"
+        },
+        "PhishingDetection": {
+          "$ref": "#/definitions/UrlPhishingDetectionConfig"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementConfig"
+        },
+        "ContentScanning": {
+          "$ref": "#/definitions/ContentScanningConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MultiThreatUrlResponse": {
+      "description": "Response from a multi-threat URL scan",
+      "type": "object",
+      "properties": {
+        "Successful": {
+          "description": "True if the scan completed successfully",
+          "type": "boolean",
+          "example": true
+        },
+        "CleanResult": {
+          "description": "True if all enabled scans returned clean results",
+          "type": "boolean",
+          "example": true
+        },
+        "ScanResults": {
+          "$ref": "#/definitions/UrlScanResults"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NsfwDetectionConfig": {
+      "description": "NSFW detection configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable NSFW detection",
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "NsfwDetectionResult": {
+      "description": "NSFW detection result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no NSFW content was found",
+          "type": "boolean"
+        },
+        "ContainsNudity": {
+          "description": "Image contains nudity",
+          "type": "boolean"
+        },
+        "ContainsGraphicViolence": {
+          "description": "Image contains graphic violence",
+          "type": "boolean"
+        },
+        "ContainsNonGraphicViolence": {
+          "description": "Image contains non-graphic violence",
+          "type": "boolean"
+        },
+        "ContainsSelfHarm": {
+          "description": "Image contains self-harm content",
+          "type": "boolean"
+        },
+        "ContainsHate": {
+          "description": "Image contains hate content",
+          "type": "boolean"
+        },
+        "ContainsPotentialIllegalActivity": {
+          "description": "Image contains potential illegal activity",
+          "type": "boolean"
+        },
+        "ContainsMedicalImagery": {
+          "description": "Image contains medical imagery",
+          "type": "boolean"
+        },
+        "ContainsProfanity": {
+          "description": "Image contains profanity",
+          "type": "boolean"
+        },
+        "Score": {
+          "format": "double",
+          "description": "NSFW score (0.0 to 1.0)",
+          "type": "number"
+        },
+        "ClassificationOutcome": {
+          "description": "Classification outcome",
+          "type": "string"
+        },
+        "Skipped": {
+          "description": "Scan was skipped (unsupported format)",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PhishingDetectionFileResult": {
+      "description": "Phishing detection result for file scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no phishing was detected",
+          "type": "boolean"
+        },
+        "ContainsPhishing": {
+          "description": "File contains phishing",
+          "type": "boolean"
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PhishingDetectionTextConfig": {
+      "description": "Phishing detection configuration for text scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable phishing detection",
+          "type": "boolean",
+          "example": true
+        },
+        "TextType": {
+          "description": "Type of text: TextMessage, UserMessage, SalesLead, EmailMessage, SupportCase, AppMessage, Other",
+          "type": "string",
+          "example": "EmailMessage"
+        },
+        "Model": {
+          "description": "Model to use: Normal or Advanced",
+          "type": "string",
+          "example": "Advanced"
+        },
+        "AllowUnsolicitedSales": {
+          "description": "Allow unsolicited sales content",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowPromotionalContent": {
+          "description": "Allow promotional content",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowWebUrls": {
+          "description": "Allow web URLs in content",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowPhoneNumbers": {
+          "description": "Allow phone numbers in content",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowEmailAddresses": {
+          "description": "Allow email addresses in content",
+          "type": "boolean",
+          "example": true
+        },
+        "ProvideUrlAnalysis": {
+          "description": "Provide URL analysis details",
+          "type": "boolean",
+          "example": true
+        },
+        "CustomPolicyID": {
+          "description": "Custom policy ID for managed instances",
+          "type": "string"
+        },
+        "ProvideAnalysisRationale": {
+          "description": "Provide analysis rationale in response",
+          "type": "boolean",
+          "example": true
+        },
+        "FromName": {
+          "description": "Name of the sender",
+          "type": "string"
+        },
+        "ToName": {
+          "description": "Name of the recipient",
+          "type": "string"
+        },
+        "FromPhoneNumber": {
+          "description": "Phone number of the sender",
+          "type": "string"
+        },
+        "ToPhoneNumber": {
+          "description": "Phone number of the recipient",
+          "type": "string"
+        },
+        "FromEmailAddress": {
+          "description": "Email address of the sender",
+          "type": "string"
+        },
+        "ToEmailAddress": {
+          "description": "Email address of the recipient",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PhishingDetectionTextResult": {
+      "description": "Phishing detection result for text scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no phishing was detected",
+          "type": "boolean"
+        },
+        "ContainsPhishing": {
+          "description": "Text contains phishing",
+          "type": "boolean"
+        },
+        "ContainsUnsolicitedSales": {
+          "description": "Text contains unsolicited sales",
+          "type": "boolean"
+        },
+        "ContainsPromotionalContent": {
+          "description": "Text contains promotional content",
+          "type": "boolean"
+        },
+        "ContainsWebUrls": {
+          "description": "Text contains web URLs",
+          "type": "boolean"
+        },
+        "ContainsPhoneNumbers": {
+          "description": "Text contains phone numbers",
+          "type": "boolean"
+        },
+        "ContainsEmailAddresses": {
+          "description": "Text contains email addresses",
+          "type": "boolean"
+        },
+        "ConfidenceLevel": {
+          "format": "double",
+          "description": "Confidence level (0.0 to 1.0)",
+          "type": "number"
+        },
+        "AnalysisRationale": {
+          "description": "Analysis rationale",
+          "type": "string"
+        },
+        "UnsafeUrls": {
+          "description": "List of unsafe URLs found",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UnsafeUrlInfo"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PhishingDetectionUrlResult": {
+      "description": "Phishing detection result for URL scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no phishing was detected",
+          "type": "boolean"
+        },
+        "PhishingRiskLevel": {
+          "format": "double",
+          "description": "Phishing risk level (0.0 to 1.0)",
+          "type": "number"
+        },
+        "IsSsrfThreat": {
+          "description": "URL is a server-side request forgery threat",
+          "type": "boolean"
+        },
+        "ContainsPhishing": {
+          "description": "URL contains phishing",
+          "type": "boolean"
+        },
+        "ContainsUnsolicitedSales": {
+          "description": "URL contains unsolicited sales",
+          "type": "boolean"
+        },
+        "ContainsPromotionalContent": {
+          "description": "URL contains promotional content",
+          "type": "boolean"
+        },
+        "ContainsPhishingAttempt": {
+          "description": "URL contains phishing attempt",
+          "type": "boolean"
+        },
+        "AnalysisRationale": {
+          "description": "Analysis rationale",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyEnforcementConfig": {
+      "description": "Policy enforcement configuration with custom rules",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable policy enforcement",
+          "type": "boolean",
+          "example": false
+        },
+        "Rules": {
+          "description": "List of policy rules to enforce",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyRule"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyEnforcementResult": {
+      "description": "Policy enforcement result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no policy violations were found",
+          "type": "boolean"
+        },
+        "RiskScore": {
+          "format": "double",
+          "description": "Overall risk score (0.0 to 1.0)",
+          "type": "number"
+        },
+        "RuleViolations": {
+          "description": "List of rule violations found",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyRuleViolation"
+          }
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyRule": {
+      "description": "A single policy rule",
+      "type": "object",
+      "properties": {
+        "RuleId": {
+          "description": "Unique rule identifier",
+          "type": "string",
+          "example": "RULE-001"
+        },
+        "RuleType": {
+          "description": "Rule type: ALLOW or DENY",
+          "type": "string",
+          "example": "DENY"
+        },
+        "RuleDescription": {
+          "description": "Natural language description of the policy rule",
+          "type": "string",
+          "example": "Documents must not contain financial advice"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyRuleViolation": {
+      "description": "A single policy rule violation",
+      "type": "object",
+      "properties": {
+        "RuleId": {
+          "description": "ID of the violated rule",
+          "type": "string"
+        },
+        "RuleViolationRiskScore": {
+          "format": "double",
+          "description": "Risk score for this violation (0.0 to 1.0)",
+          "type": "number"
+        },
+        "RuleViolationRationale": {
+          "description": "Rationale for the violation",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpamDetectionConfig": {
+      "description": "Spam detection configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable spam detection",
+          "type": "boolean",
+          "example": true
+        },
+        "Model": {
+          "description": "Model to use: Normal or Advanced",
+          "type": "string",
+          "example": "Advanced"
+        },
+        "AllowUnsolicitedSales": {
+          "description": "Allow unsolicited sales content",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPromotionalContent": {
+          "description": "Allow promotional content",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowPhishing": {
+          "description": "Allow phishing content",
+          "type": "boolean",
+          "example": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpamDetectionFileConfig": {
+      "description": "Spam detection configuration for file scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable spam detection",
+          "type": "boolean",
+          "example": true
+        },
+        "Model": {
+          "description": "Model to use: Normal or Advanced",
+          "type": "string",
+          "example": "Advanced"
+        },
+        "Preprocessing": {
+          "description": "Preprocessing mode: None, Compatability, Auto",
+          "type": "string",
+          "example": "Auto"
+        },
+        "AllowPhishing": {
+          "description": "Allow phishing content",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowUnsolicitedSales": {
+          "description": "Allow unsolicited sales",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPromotionalContent": {
+          "description": "Allow promotional content",
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpamDetectionResult": {
+      "description": "Spam detection result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no spam was detected",
+          "type": "boolean"
+        },
+        "SpamRiskLevel": {
+          "format": "double",
+          "description": "Spam risk level (0.0 to 1.0)",
+          "type": "number"
+        },
+        "ContainsSpam": {
+          "description": "Content contains spam",
+          "type": "boolean"
+        },
+        "ContainsUnsolicitedSales": {
+          "description": "Content contains unsolicited sales",
+          "type": "boolean"
+        },
+        "ContainsPromotionalContent": {
+          "description": "Content contains promotional material",
+          "type": "boolean"
+        },
+        "ContainsPhishingAttempt": {
+          "description": "Content contains phishing attempt",
+          "type": "boolean"
+        },
+        "AnalysisRationale": {
+          "description": "Analysis rationale",
+          "type": "string"
+        },
+        "Skipped": {
+          "description": "Scan was skipped",
+          "type": "boolean"
+        },
+        "SkipReason": {
+          "description": "Reason the scan was skipped",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TextScanResults": {
+      "description": "Individual scan results for a text scan",
+      "type": "object",
+      "properties": {
+        "VirusScan": {
+          "$ref": "#/definitions/VirusScanResult"
+        },
+        "PhishingDetection": {
+          "$ref": "#/definitions/PhishingDetectionTextResult"
+        },
+        "SpamDetection": {
+          "$ref": "#/definitions/SpamDetectionResult"
+        },
+        "DlpDetection": {
+          "$ref": "#/definitions/DlpDetectionResult"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementResult"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UnsafeUrlInfo": {
+      "description": "Information about an unsafe URL",
+      "type": "object",
+      "properties": {
+        "Url": {
+          "description": "The URL",
+          "type": "string"
+        },
+        "CleanResult": {
+          "description": "True if URL is clean",
+          "type": "boolean"
+        },
+        "IsSsrfThreat": {
+          "description": "URL is an SSRF threat",
+          "type": "boolean"
+        },
+        "ContainsPhishing": {
+          "description": "URL contains phishing",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UrlPhishingDetectionConfig": {
+      "description": "URL-specific phishing detection configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable phishing detection",
+          "type": "boolean",
+          "example": true
+        },
+        "CustomPolicyID": {
+          "description": "Custom policy ID",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UrlScanResults": {
+      "description": "Individual scan results for a URL scan",
+      "type": "object",
+      "properties": {
+        "VirusScan": {
+          "$ref": "#/definitions/VirusScanUrlResult"
+        },
+        "PhishingDetection": {
+          "$ref": "#/definitions/PhishingDetectionUrlResult"
+        },
+        "PolicyEnforcement": {
+          "$ref": "#/definitions/PolicyEnforcementResult"
+        },
+        "ContentScanning": {
+          "$ref": "#/definitions/ContentScanningResult"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UrlVirusScanConfig": {
+      "description": "URL-specific virus scan configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable virus scanning",
+          "type": "boolean",
+          "example": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "VirusFound": {
+      "description": "Virus found detail",
+      "type": "object",
+      "properties": {
+        "FileName": {
+          "description": "Name of the file containing the virus",
+          "type": "string"
+        },
+        "VirusName": {
+          "description": "Name of the virus",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VirusScanConfig": {
+      "description": "Virus scan configuration",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Enable virus scanning",
+          "type": "boolean",
+          "example": true
+        },
+        "AllowExecutables": {
+          "description": "Allow executable files",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowInvalidFiles": {
+          "description": "Allow invalid files",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowScripts": {
+          "description": "Allow script files",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowPasswordProtectedFiles": {
+          "description": "Allow password-protected files",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowMacros": {
+          "description": "Allow files containing macros",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowXmlExternalEntities": {
+          "description": "Allow XML external entities",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowInsecureDeserialization": {
+          "description": "Allow insecure deserialization",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowHtml": {
+          "description": "Allow HTML content",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowUnsafeArchives": {
+          "description": "Allow unsafe archives",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowOleEmbeddedObject": {
+          "description": "Allow OLE embedded objects",
+          "type": "boolean",
+          "example": false
+        },
+        "AllowUnwantedAction": {
+          "description": "Allow unwanted actions",
+          "type": "boolean",
+          "example": false
+        },
+        "RestrictFileTypes": {
+          "description": "Restrict to specific file types (comma-separated extensions)",
+          "type": "string",
+          "example": ".pdf,.docx,.png"
+        },
+        "Options": {
+          "description": "Comma-separated scan options",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VirusScanContentInfo": {
+      "description": "Additional content information from virus scan",
+      "type": "object",
+      "properties": {
+        "ContainsJSON": {
+          "description": "File contains JSON content",
+          "type": "boolean"
+        },
+        "ContainsXML": {
+          "description": "File contains XML content",
+          "type": "boolean"
+        },
+        "ContainsImage": {
+          "description": "File contains image content",
+          "type": "boolean"
+        },
+        "Hash_SHA1": {
+          "description": "SHA-1 hash of the file",
+          "type": "string"
+        },
+        "RelevantSubfileName": {
+          "description": "Name of relevant subfile",
+          "type": "string"
+        },
+        "RelevantSubfileHash_SHA1": {
+          "description": "SHA-1 hash of relevant subfile",
+          "type": "string"
+        },
+        "IsAuthenticodeSigned": {
+          "description": "File has Authenticode signature",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VirusScanResult": {
+      "description": "Virus scan result",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no threats were found",
+          "type": "boolean"
+        },
+        "ContainsExecutable": {
+          "description": "Contains executable content",
+          "type": "boolean"
+        },
+        "ContainsInvalidFile": {
+          "description": "Contains invalid file structure",
+          "type": "boolean"
+        },
+        "ContainsScript": {
+          "description": "Contains script content",
+          "type": "boolean"
+        },
+        "ContainsPasswordProtectedFile": {
+          "description": "File is password-protected",
+          "type": "boolean"
+        },
+        "ContainsRestrictedFileFormat": {
+          "description": "File format is restricted",
+          "type": "boolean"
+        },
+        "ContainsMacros": {
+          "description": "Contains macro code",
+          "type": "boolean"
+        },
+        "ContainsXmlExternalEntities": {
+          "description": "Contains XML external entities",
+          "type": "boolean"
+        },
+        "ContainsInsecureDeserialization": {
+          "description": "Contains insecure deserialization",
+          "type": "boolean"
+        },
+        "ContainsHtml": {
+          "description": "Contains HTML content",
+          "type": "boolean"
+        },
+        "ContainsUnsafeArchive": {
+          "description": "Contains unsafe archive structure",
+          "type": "boolean"
+        },
+        "ContainsOleEmbeddedObject": {
+          "description": "Contains OLE embedded objects",
+          "type": "boolean"
+        },
+        "ContainsUnwantedAction": {
+          "description": "Contains unwanted actions",
+          "type": "boolean"
+        },
+        "VerifiedFileFormat": {
+          "description": "Content-verified file format",
+          "type": "string"
+        },
+        "FoundViruses": {
+          "description": "List of viruses found",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VirusFound"
+          }
+        },
+        "ContentInformation": {
+          "$ref": "#/definitions/VirusScanContentInfo"
+        },
+        "ErrorMessage": {
+          "description": "Error message if the scan failed",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VirusScanUrlResult": {
+      "description": "Virus scan result for URL scanning",
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "description": "Whether this scan was enabled",
+          "type": "boolean"
+        },
+        "Successful": {
+          "description": "Whether this scan completed successfully",
+          "type": "boolean"
+        },
+        "CleanResult": {
+          "description": "True if no threats were found",
+          "type": "boolean"
+        },
+        "WebsiteThreatType": {
+          "description": "Website threat type: None, Malware, Phishing, ForcedDownload, UnableToConnect",
+          "type": "string"
+        },
+        "FoundViruses": {
+          "description": "List of viruses found",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VirusFound"
+          }
+        },
+        "WebsiteHttpResponseCode": {
+          "format": "int32",
+          "description": "HTTP response code from the website",
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "securityDefinitions": {
+    "Apikey": {
+      "type": "apiKey",
+      "name": "Apikey",
+      "in": "header",
+      "description": "Apikey"
+    }
+  },
+  "security": [
+    {
+      "Apikey": [ ]
+    }
+  ]
+}

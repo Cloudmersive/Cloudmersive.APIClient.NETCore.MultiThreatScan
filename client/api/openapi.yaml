@@ -1,0 +1,2971 @@
+openapi: 3.0.1
+info:
+  description: "Scan text, files, and URLs for multiple threat types in a single API\
+    \ call."
+  title: multithreatscanapi
+  version: v1
+servers:
+- url: /
+security:
+- Apikey: []
+paths:
+  /multi-threat-scan/text:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatTextRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatTextRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatTextRequest'
+        description: Text scan request with content and scan configuration
+        required: false
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MultiThreatTextResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatTextResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatTextResponse'
+          description: OK
+      summary: "Scan text for multiple threat types including viruses, phishing, spam,\
+        \ DLP, and policy violations in a single API call."
+      tags:
+      - MultiThreat
+      x-codegen-request-body-name: body
+  /multi-threat-scan/file:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/_multi_threat_scan_file_post_request'
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MultiThreatFileResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatFileResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatFileResponse'
+          description: OK
+      summary: "Scan a file for multiple threat types including viruses, NSFW, AI-generated\
+        \ content, fraud, phishing, spam, DLP, and policy violations in a single API\
+        \ call."
+      tags:
+      - MultiThreat
+  /multi-threat-scan/url:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatUrlRequest'
+          text/json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatUrlRequest'
+          application/*+json:
+            schema:
+              $ref: '#/components/schemas/MultiThreatUrlRequest'
+        description: URL scan request with URL and scan configuration
+        required: false
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MultiThreatUrlResponse'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatUrlResponse'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/MultiThreatUrlResponse'
+          description: OK
+      summary: "Scan a URL for multiple threat types including viruses, phishing,\
+        \ and policy violations in a single API call. Optionally download and scan\
+        \ the file at the URL."
+      tags:
+      - MultiThreat
+      x-codegen-request-body-name: body
+components:
+  schemas:
+    AiContentDetectionConfig:
+      additionalProperties: false
+      description: AI-generated content detection configuration
+      example:
+        Enabled: true
+      properties:
+        Enabled:
+          description: Enable AI content detection
+          example: true
+          type: boolean
+      type: object
+    AiContentDetectionResult:
+      additionalProperties: false
+      description: AI content detection result
+      example:
+        AiConfidenceLevel: 6.027456183070403
+        DetectedFileType: DetectedFileType
+        Skipped: true
+        Enabled: true
+        SkipReason: SkipReason
+        ContainsAiGeneratedContent: true
+        Successful: true
+        Warnings:
+        - Warnings
+        - Warnings
+        CleanResult: true
+        Verdict: Verdict
+        Provider: Provider
+        Generator: Generator
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no AI-generated content was detected
+          type: boolean
+        ContainsAiGeneratedContent:
+          description: Content appears to be AI-generated
+          type: boolean
+        AiConfidenceLevel:
+          description: Confidence level of AI content detection (0.0 to 1.0)
+          format: double
+          type: number
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+        Verdict:
+          description: "Categorical assessment of whether the file appears AI-generated\
+            \ based on its\r\nembedded metadata. One of: NoDeterministicAiMetadataFound,\
+            \ VerifiedAiGenerated,\r\nVerifiedAiEditedOrComposite, LikelyAiGenerated,\
+            \ LikelyAiEditedOrComposite,\r\nPossibleAiGenerated, ConflictingSignals,\
+            \ MetadataUnavailableOrUnreadable,\r\nUnsupportedFileType."
+          type: string
+        Provider:
+          description: "AI provider name (for example, \"OpenAI\", \"Adobe\", \"Google\"\
+            , \"Microsoft\").\r\nEmpty when the metadata does not identify a provider."
+          type: string
+        Generator:
+          description: "AI tool or product name (for example, \"ChatGPT\", \"Adobe\
+            \ Firefly\", \"Stable\r\nDiffusion\"). Empty when the metadata does not\
+            \ identify a specific tool."
+          type: string
+        Warnings:
+          description: "Non-fatal warnings produced during analysis, intended for\
+            \ diagnostic display.\r\nEmpty when no warnings were produced."
+          items:
+            type: string
+          type: array
+        DetectedFileType:
+          description: "File type detected from the file's content (for example, \"\
+            jpeg\", \"png\", \"pdf\").\r\nMay differ from the file's name extension\
+            \ when the content was misnamed."
+          type: string
+      type: object
+    ContentScanningConfig:
+      additionalProperties: false
+      description: Configuration for downloading and scanning the file at a URL
+      example:
+        DownloadAndScan: true
+        SpamDetection:
+          Preprocessing: Auto
+          AllowPhishing: false
+          Model: Advanced
+          Enabled: true
+          AllowUnsolicitedSales: false
+          AllowPromotionalContent: true
+        Enabled: false
+        NsfwDetection:
+          Enabled: true
+        AiContentDetection:
+          Enabled: true
+        DlpDetection:
+          AllowBearerTokens: false
+          AllowMacAddresses: false
+          AllowPhoneNumbers: false
+          AllowTreatmentPayments: false
+          AllowHealthPlanBeneficiaryNumbers: false
+          AllowPassportNumbers: false
+          AllowDeviceIds: false
+          AllowDeepWebUrls: false
+          AllowHealthInsuranceMemberIds: false
+          AllowHttpCookies: false
+          AllowPrivateKeys: false
+          AllowDriversLicenses: false
+          AllowTreatmentTypeDescriptions: false
+          ProvideAnalysisRationale: true
+          AllowBankAccountNumbers: false
+          AllowCreditCardNumbers: false
+          AllowEmailAddresses: false
+          AllowIbans: false
+          AllowSourceCode: false
+          AllowCredentials: false
+          AllowTaxpayerIds: false
+          AllowMedicalTreatmentDates: false
+          AllowPersonNames: false
+          RecognitionMode: Fast
+          Enabled: true
+          AllowStreetAddresses: false
+          AllowIpAddresses: false
+          AllowBirthDates: false
+          AllowInjuryDiseaseReferences: false
+          CustomPolicyID: CustomPolicyID
+          AllowHealthInsuranceNumbers: false
+          AllowSocialSecurityNumbers: false
+          AllowVehicleIds: false
+        FraudDetection:
+          Preprocessing: Auto
+          Enabled: true
+          ResultCrossCheck: None
+          UserEmailAddress: UserEmailAddress
+          UserEmailAddressVerified: false
+        PolicyEnforcement:
+          Enabled: false
+          Rules:
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+      properties:
+        Enabled:
+          description: Enable content scanning
+          example: false
+          type: boolean
+        DownloadAndScan:
+          description: Download and scan the file at the URL
+          example: true
+          type: boolean
+        NsfwDetection:
+          $ref: '#/components/schemas/NsfwDetectionConfig'
+        AiContentDetection:
+          $ref: '#/components/schemas/AiContentDetectionConfig'
+        FraudDetection:
+          $ref: '#/components/schemas/FraudDetectionConfig'
+        SpamDetection:
+          $ref: '#/components/schemas/SpamDetectionFileConfig'
+        DlpDetection:
+          $ref: '#/components/schemas/DlpDetectionFileConfig'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementConfig'
+      type: object
+    ContentScanningResult:
+      additionalProperties: false
+      description: Result of content scanning (downloading and scanning a file from
+        URL)
+      example:
+        DownloadedFileFormat: DownloadedFileFormat
+        SpamDetection:
+          ContainsSpam: true
+          ContainsUnsolicitedSales: true
+          ContainsPhishingAttempt: true
+          SpamRiskLevel: 6.027456183070403
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsPromotionalContent: true
+        Enabled: true
+        NsfwDetection:
+          ContainsNonGraphicViolence: true
+          ContainsPotentialIllegalActivity: true
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          ContainsGraphicViolence: true
+          ContainsMedicalImagery: true
+          Successful: true
+          ContainsHate: true
+          CleanResult: true
+          ContainsNudity: true
+          Score: 0.8008281904610115
+          ClassificationOutcome: ClassificationOutcome
+          ContainsSelfHarm: true
+          ContainsProfanity: true
+        AiContentDetection:
+          AiConfidenceLevel: 6.027456183070403
+          DetectedFileType: DetectedFileType
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          ContainsAiGeneratedContent: true
+          Successful: true
+          Warnings:
+          - Warnings
+          - Warnings
+          CleanResult: true
+          Verdict: Verdict
+          Provider: Provider
+          Generator: Generator
+        DlpDetection:
+          ContainsMedicalTreatmentDates: true
+          ContainsPersonNames: true
+          ContainsDeepWebUrls: true
+          ContainsPassportNumbers: true
+          ContainsSocialSecurityNumbers: true
+          AnalysisRationale: AnalysisRationale
+          ContainsHttpCookies: true
+          ContainsPrivateKeys: true
+          ContainsSourceCode: true
+          ContainsPhoneNumbers: true
+          ContainsTaxpayerIds: true
+          ContainsBearerTokens: true
+          ContainsInjuryDiseaseReferences: true
+          ContainsHealthInsuranceMemberIds: true
+          ContainsBirthDates: true
+          ContainsCreditCardNumbers: true
+          ContainsHealthPlanBeneficiaryNumbers: true
+          ContainsTreatmentTypeDescriptions: true
+          ContainsVehicleIds: true
+          Skipped: true
+          Enabled: true
+          ContainsIbans: true
+          ContainsTreatmentPayments: true
+          SkipReason: SkipReason
+          ContainsHealthInsuranceNumbers: true
+          Successful: true
+          ContainsMacAddresses: true
+          CleanResult: true
+          ContainsDeviceIds: true
+          ContainsIpAddresses: true
+          ContainsStreetAddresses: true
+          ContainsEmailAddresses: true
+          ContainsBankAccountNumbers: true
+          ContainsCredentials: true
+          ContainsDriversLicenses: true
+        FraudDetection:
+          ContainsAssetTransfer: true
+          ContainsEmploymentAgreement: true
+          Skipped: true
+          Enabled: true
+          ContainsFinancialLiability: true
+          ContainsPurchaseAgreement: true
+          SkipReason: SkipReason
+          ContainsAiGeneratedContent: true
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsSensitiveInformationCollection: true
+          DocumentClass: DocumentClass
+          FraudRiskLevel: 1.4658129805029452
+          ContainsExpiredDocument: true
+        PolicyEnforcement:
+          Skipped: true
+          Enabled: true
+          RiskScore: 1.4658129805029452
+          RuleViolations:
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          SkipReason: SkipReason
+          Successful: true
+          CleanResult: true
+      properties:
+        Enabled:
+          description: Whether content scanning was enabled
+          type: boolean
+        DownloadedFileFormat:
+          description: Detected file format of downloaded content
+          type: string
+        NsfwDetection:
+          $ref: '#/components/schemas/NsfwDetectionResult'
+        AiContentDetection:
+          $ref: '#/components/schemas/AiContentDetectionResult'
+        FraudDetection:
+          $ref: '#/components/schemas/FraudDetectionResult'
+        SpamDetection:
+          $ref: '#/components/schemas/SpamDetectionResult'
+        DlpDetection:
+          $ref: '#/components/schemas/DlpDetectionResult'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementResult'
+      type: object
+    DlpDetectionConfig:
+      additionalProperties: false
+      description: DLP (PII/PHI) detection configuration for text scanning
+      example:
+        AllowBearerTokens: false
+        AllowMacAddresses: false
+        AllowPhoneNumbers: false
+        AllowTreatmentPayments: false
+        AllowHealthPlanBeneficiaryNumbers: false
+        AllowPassportNumbers: false
+        AllowDeviceIds: false
+        AllowDeepWebUrls: false
+        AllowHealthInsuranceMemberIds: false
+        AllowHttpCookies: false
+        AllowPrivateKeys: false
+        AllowDriversLicenses: false
+        AllowTreatmentTypeDescriptions: false
+        ProvideAnalysisRationale: true
+        AllowBankAccountNumbers: false
+        AllowCreditCardNumbers: false
+        AllowEmailAddresses: false
+        AllowIbans: false
+        AllowSourceCode: false
+        AllowCredentials: false
+        AllowTaxpayerIds: false
+        AllowMedicalTreatmentDates: false
+        AllowPersonNames: false
+        Enabled: true
+        AllowStreetAddresses: false
+        AllowIpAddresses: false
+        AllowBirthDates: false
+        AllowInjuryDiseaseReferences: false
+        CustomPolicyID: CustomPolicyID
+        AllowHealthInsuranceNumbers: false
+        AllowSocialSecurityNumbers: false
+        AllowVehicleIds: false
+      properties:
+        Enabled:
+          description: Enable DLP detection
+          example: true
+          type: boolean
+        AllowEmailAddresses:
+          description: Allow email addresses
+          example: false
+          type: boolean
+        AllowPhoneNumbers:
+          description: Allow phone numbers
+          example: false
+          type: boolean
+        AllowStreetAddresses:
+          description: Allow street addresses
+          example: false
+          type: boolean
+        AllowPersonNames:
+          description: Allow person names
+          example: false
+          type: boolean
+        AllowBirthDates:
+          description: Allow birth dates
+          example: false
+          type: boolean
+        AllowPassportNumbers:
+          description: Allow passport numbers
+          example: false
+          type: boolean
+        AllowDriversLicenses:
+          description: Allow driver's licenses
+          example: false
+          type: boolean
+        AllowSocialSecurityNumbers:
+          description: Allow Social Security numbers
+          example: false
+          type: boolean
+        AllowTaxpayerIds:
+          description: Allow taxpayer IDs
+          example: false
+          type: boolean
+        AllowCreditCardNumbers:
+          description: Allow credit card numbers
+          example: false
+          type: boolean
+        AllowBankAccountNumbers:
+          description: Allow bank account numbers
+          example: false
+          type: boolean
+        AllowIbans:
+          description: Allow IBANs
+          example: false
+          type: boolean
+        AllowHealthInsuranceNumbers:
+          description: Allow health insurance numbers
+          example: false
+          type: boolean
+        AllowBearerTokens:
+          description: Allow bearer tokens
+          example: false
+          type: boolean
+        AllowHttpCookies:
+          description: Allow HTTP cookies
+          example: false
+          type: boolean
+        AllowPrivateKeys:
+          description: Allow private keys
+          example: false
+          type: boolean
+        AllowCredentials:
+          description: Allow credentials
+          example: false
+          type: boolean
+        AllowDeepWebUrls:
+          description: Allow deep web URLs
+          example: false
+          type: boolean
+        AllowSourceCode:
+          description: Allow source code
+          example: false
+          type: boolean
+        AllowIpAddresses:
+          description: Allow IP addresses
+          example: false
+          type: boolean
+        AllowMacAddresses:
+          description: Allow MAC addresses
+          example: false
+          type: boolean
+        AllowHealthInsuranceMemberIds:
+          description: Allow health insurance member IDs
+          example: false
+          type: boolean
+        AllowInjuryDiseaseReferences:
+          description: Allow injury/disease references
+          example: false
+          type: boolean
+        AllowTreatmentTypeDescriptions:
+          description: Allow treatment type descriptions
+          example: false
+          type: boolean
+        AllowMedicalTreatmentDates:
+          description: Allow medical treatment dates
+          example: false
+          type: boolean
+        AllowHealthPlanBeneficiaryNumbers:
+          description: Allow health plan beneficiary numbers
+          example: false
+          type: boolean
+        AllowTreatmentPayments:
+          description: Allow treatment payments
+          example: false
+          type: boolean
+        AllowVehicleIds:
+          description: Allow vehicle IDs
+          example: false
+          type: boolean
+        AllowDeviceIds:
+          description: Allow device IDs
+          example: false
+          type: boolean
+        ProvideAnalysisRationale:
+          description: Provide analysis rationale
+          example: true
+          type: boolean
+        CustomPolicyID:
+          description: Custom policy ID
+          type: string
+      type: object
+    DlpDetectionFileConfig:
+      additionalProperties: false
+      description: DLP detection configuration for file scanning (extends text config
+        with RecognitionMode)
+      example:
+        AllowBearerTokens: false
+        AllowMacAddresses: false
+        AllowPhoneNumbers: false
+        AllowTreatmentPayments: false
+        AllowHealthPlanBeneficiaryNumbers: false
+        AllowPassportNumbers: false
+        AllowDeviceIds: false
+        AllowDeepWebUrls: false
+        AllowHealthInsuranceMemberIds: false
+        AllowHttpCookies: false
+        AllowPrivateKeys: false
+        AllowDriversLicenses: false
+        AllowTreatmentTypeDescriptions: false
+        ProvideAnalysisRationale: true
+        AllowBankAccountNumbers: false
+        AllowCreditCardNumbers: false
+        AllowEmailAddresses: false
+        AllowIbans: false
+        AllowSourceCode: false
+        AllowCredentials: false
+        AllowTaxpayerIds: false
+        AllowMedicalTreatmentDates: false
+        AllowPersonNames: false
+        RecognitionMode: Fast
+        Enabled: true
+        AllowStreetAddresses: false
+        AllowIpAddresses: false
+        AllowBirthDates: false
+        AllowInjuryDiseaseReferences: false
+        CustomPolicyID: CustomPolicyID
+        AllowHealthInsuranceNumbers: false
+        AllowSocialSecurityNumbers: false
+        AllowVehicleIds: false
+      properties:
+        Enabled:
+          description: Enable DLP detection
+          example: true
+          type: boolean
+        AllowEmailAddresses:
+          description: Allow email addresses
+          example: false
+          type: boolean
+        AllowPhoneNumbers:
+          description: Allow phone numbers
+          example: false
+          type: boolean
+        AllowStreetAddresses:
+          description: Allow street addresses
+          example: false
+          type: boolean
+        AllowPersonNames:
+          description: Allow person names
+          example: false
+          type: boolean
+        AllowBirthDates:
+          description: Allow birth dates
+          example: false
+          type: boolean
+        AllowPassportNumbers:
+          description: Allow passport numbers
+          example: false
+          type: boolean
+        AllowDriversLicenses:
+          description: Allow driver's licenses
+          example: false
+          type: boolean
+        AllowSocialSecurityNumbers:
+          description: Allow Social Security numbers
+          example: false
+          type: boolean
+        AllowTaxpayerIds:
+          description: Allow taxpayer IDs
+          example: false
+          type: boolean
+        AllowCreditCardNumbers:
+          description: Allow credit card numbers
+          example: false
+          type: boolean
+        AllowBankAccountNumbers:
+          description: Allow bank account numbers
+          example: false
+          type: boolean
+        AllowIbans:
+          description: Allow IBANs
+          example: false
+          type: boolean
+        AllowHealthInsuranceNumbers:
+          description: Allow health insurance numbers
+          example: false
+          type: boolean
+        AllowBearerTokens:
+          description: Allow bearer tokens
+          example: false
+          type: boolean
+        AllowHttpCookies:
+          description: Allow HTTP cookies
+          example: false
+          type: boolean
+        AllowPrivateKeys:
+          description: Allow private keys
+          example: false
+          type: boolean
+        AllowCredentials:
+          description: Allow credentials
+          example: false
+          type: boolean
+        AllowDeepWebUrls:
+          description: Allow deep web URLs
+          example: false
+          type: boolean
+        AllowSourceCode:
+          description: Allow source code
+          example: false
+          type: boolean
+        AllowIpAddresses:
+          description: Allow IP addresses
+          example: false
+          type: boolean
+        AllowMacAddresses:
+          description: Allow MAC addresses
+          example: false
+          type: boolean
+        AllowHealthInsuranceMemberIds:
+          description: Allow health insurance member IDs
+          example: false
+          type: boolean
+        AllowInjuryDiseaseReferences:
+          description: Allow injury/disease references
+          example: false
+          type: boolean
+        AllowTreatmentTypeDescriptions:
+          description: Allow treatment type descriptions
+          example: false
+          type: boolean
+        AllowMedicalTreatmentDates:
+          description: Allow medical treatment dates
+          example: false
+          type: boolean
+        AllowHealthPlanBeneficiaryNumbers:
+          description: Allow health plan beneficiary numbers
+          example: false
+          type: boolean
+        AllowTreatmentPayments:
+          description: Allow treatment payments
+          example: false
+          type: boolean
+        AllowVehicleIds:
+          description: Allow vehicle IDs
+          example: false
+          type: boolean
+        AllowDeviceIds:
+          description: Allow device IDs
+          example: false
+          type: boolean
+        ProvideAnalysisRationale:
+          description: Provide analysis rationale
+          example: true
+          type: boolean
+        CustomPolicyID:
+          description: Custom policy ID
+          type: string
+        RecognitionMode:
+          description: "Recognition mode: Fast, FastPlus, FastMini"
+          example: Fast
+          type: string
+      type: object
+    DlpDetectionResult:
+      additionalProperties: false
+      description: DLP (PII/PHI) detection result
+      example:
+        ContainsMedicalTreatmentDates: true
+        ContainsPersonNames: true
+        ContainsDeepWebUrls: true
+        ContainsPassportNumbers: true
+        ContainsSocialSecurityNumbers: true
+        AnalysisRationale: AnalysisRationale
+        ContainsHttpCookies: true
+        ContainsPrivateKeys: true
+        ContainsSourceCode: true
+        ContainsPhoneNumbers: true
+        ContainsTaxpayerIds: true
+        ContainsBearerTokens: true
+        ContainsInjuryDiseaseReferences: true
+        ContainsHealthInsuranceMemberIds: true
+        ContainsBirthDates: true
+        ContainsCreditCardNumbers: true
+        ContainsHealthPlanBeneficiaryNumbers: true
+        ContainsTreatmentTypeDescriptions: true
+        ContainsVehicleIds: true
+        Skipped: true
+        Enabled: true
+        ContainsIbans: true
+        ContainsTreatmentPayments: true
+        SkipReason: SkipReason
+        ContainsHealthInsuranceNumbers: true
+        Successful: true
+        ContainsMacAddresses: true
+        CleanResult: true
+        ContainsDeviceIds: true
+        ContainsIpAddresses: true
+        ContainsStreetAddresses: true
+        ContainsEmailAddresses: true
+        ContainsBankAccountNumbers: true
+        ContainsCredentials: true
+        ContainsDriversLicenses: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no PII/PHI was detected
+          type: boolean
+        ContainsEmailAddresses:
+          description: Contains email addresses
+          type: boolean
+        ContainsPhoneNumbers:
+          description: Contains phone numbers
+          type: boolean
+        ContainsStreetAddresses:
+          description: Contains street addresses
+          type: boolean
+        ContainsPersonNames:
+          description: Contains person names
+          type: boolean
+        ContainsBirthDates:
+          description: Contains birth dates
+          type: boolean
+        ContainsPassportNumbers:
+          description: Contains passport numbers
+          type: boolean
+        ContainsDriversLicenses:
+          description: Contains driver's licenses
+          type: boolean
+        ContainsSocialSecurityNumbers:
+          description: Contains Social Security numbers
+          type: boolean
+        ContainsTaxpayerIds:
+          description: Contains taxpayer IDs
+          type: boolean
+        ContainsCreditCardNumbers:
+          description: Contains credit card numbers
+          type: boolean
+        ContainsBankAccountNumbers:
+          description: Contains bank account numbers
+          type: boolean
+        ContainsIbans:
+          description: Contains IBANs
+          type: boolean
+        ContainsHealthInsuranceNumbers:
+          description: Contains health insurance numbers
+          type: boolean
+        ContainsBearerTokens:
+          description: Contains bearer tokens
+          type: boolean
+        ContainsHttpCookies:
+          description: Contains HTTP cookies
+          type: boolean
+        ContainsPrivateKeys:
+          description: Contains private keys
+          type: boolean
+        ContainsCredentials:
+          description: Contains credentials
+          type: boolean
+        ContainsDeepWebUrls:
+          description: Contains deep web URLs
+          type: boolean
+        ContainsSourceCode:
+          description: Contains source code
+          type: boolean
+        ContainsIpAddresses:
+          description: Contains IP addresses
+          type: boolean
+        ContainsMacAddresses:
+          description: Contains MAC addresses
+          type: boolean
+        ContainsHealthInsuranceMemberIds:
+          description: Contains health insurance member IDs
+          type: boolean
+        ContainsInjuryDiseaseReferences:
+          description: Contains injury/disease references
+          type: boolean
+        ContainsTreatmentTypeDescriptions:
+          description: Contains treatment type descriptions
+          type: boolean
+        ContainsMedicalTreatmentDates:
+          description: Contains medical treatment dates
+          type: boolean
+        ContainsHealthPlanBeneficiaryNumbers:
+          description: Contains health plan beneficiary numbers
+          type: boolean
+        ContainsTreatmentPayments:
+          description: Contains treatment payments
+          type: boolean
+        ContainsVehicleIds:
+          description: Contains vehicle IDs
+          type: boolean
+        ContainsDeviceIds:
+          description: Contains device IDs
+          type: boolean
+        AnalysisRationale:
+          description: Analysis rationale
+          type: string
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    FileScanResults:
+      additionalProperties: false
+      description: Individual scan results for a file scan
+      example:
+        PhishingDetection:
+          ContainsPhishing: true
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          Successful: true
+          CleanResult: true
+        SpamDetection:
+          ContainsSpam: true
+          ContainsUnsolicitedSales: true
+          ContainsPhishingAttempt: true
+          SpamRiskLevel: 6.027456183070403
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsPromotionalContent: true
+        NsfwDetection:
+          ContainsNonGraphicViolence: true
+          ContainsPotentialIllegalActivity: true
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          ContainsGraphicViolence: true
+          ContainsMedicalImagery: true
+          Successful: true
+          ContainsHate: true
+          CleanResult: true
+          ContainsNudity: true
+          Score: 0.8008281904610115
+          ClassificationOutcome: ClassificationOutcome
+          ContainsSelfHarm: true
+          ContainsProfanity: true
+        AiContentDetection:
+          AiConfidenceLevel: 6.027456183070403
+          DetectedFileType: DetectedFileType
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          ContainsAiGeneratedContent: true
+          Successful: true
+          Warnings:
+          - Warnings
+          - Warnings
+          CleanResult: true
+          Verdict: Verdict
+          Provider: Provider
+          Generator: Generator
+        VirusScan:
+          ContainsInvalidFile: true
+          ContainsRestrictedFileFormat: true
+          ContainsUnwantedAction: true
+          ContainsScript: true
+          ContainsOleEmbeddedObject: true
+          FoundViruses:
+          - FileName: FileName
+            VirusName: VirusName
+          - FileName: FileName
+            VirusName: VirusName
+          ContentInformation:
+            Hash_SHA1: Hash_SHA1
+            ContainsJSON: true
+            IsAuthenticodeSigned: true
+            RelevantSubfileName: RelevantSubfileName
+            ContainsImage: true
+            ContainsXML: true
+            RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+          Enabled: true
+          ContainsMacros: true
+          ContainsXmlExternalEntities: true
+          Successful: true
+          CleanResult: true
+          ContainsInsecureDeserialization: true
+          ContainsHtml: true
+          ContainsExecutable: true
+          VerifiedFileFormat: VerifiedFileFormat
+          ContainsUnsafeArchive: true
+          ErrorMessage: ErrorMessage
+          ContainsPasswordProtectedFile: true
+        DlpDetection:
+          ContainsMedicalTreatmentDates: true
+          ContainsPersonNames: true
+          ContainsDeepWebUrls: true
+          ContainsPassportNumbers: true
+          ContainsSocialSecurityNumbers: true
+          AnalysisRationale: AnalysisRationale
+          ContainsHttpCookies: true
+          ContainsPrivateKeys: true
+          ContainsSourceCode: true
+          ContainsPhoneNumbers: true
+          ContainsTaxpayerIds: true
+          ContainsBearerTokens: true
+          ContainsInjuryDiseaseReferences: true
+          ContainsHealthInsuranceMemberIds: true
+          ContainsBirthDates: true
+          ContainsCreditCardNumbers: true
+          ContainsHealthPlanBeneficiaryNumbers: true
+          ContainsTreatmentTypeDescriptions: true
+          ContainsVehicleIds: true
+          Skipped: true
+          Enabled: true
+          ContainsIbans: true
+          ContainsTreatmentPayments: true
+          SkipReason: SkipReason
+          ContainsHealthInsuranceNumbers: true
+          Successful: true
+          ContainsMacAddresses: true
+          CleanResult: true
+          ContainsDeviceIds: true
+          ContainsIpAddresses: true
+          ContainsStreetAddresses: true
+          ContainsEmailAddresses: true
+          ContainsBankAccountNumbers: true
+          ContainsCredentials: true
+          ContainsDriversLicenses: true
+        FraudDetection:
+          ContainsAssetTransfer: true
+          ContainsEmploymentAgreement: true
+          Skipped: true
+          Enabled: true
+          ContainsFinancialLiability: true
+          ContainsPurchaseAgreement: true
+          SkipReason: SkipReason
+          ContainsAiGeneratedContent: true
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsSensitiveInformationCollection: true
+          DocumentClass: DocumentClass
+          FraudRiskLevel: 1.4658129805029452
+          ContainsExpiredDocument: true
+        PolicyEnforcement:
+          Skipped: true
+          Enabled: true
+          RiskScore: 1.4658129805029452
+          RuleViolations:
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          SkipReason: SkipReason
+          Successful: true
+          CleanResult: true
+      properties:
+        VirusScan:
+          $ref: '#/components/schemas/VirusScanResult'
+        NsfwDetection:
+          $ref: '#/components/schemas/NsfwDetectionResult'
+        AiContentDetection:
+          $ref: '#/components/schemas/AiContentDetectionResult'
+        FraudDetection:
+          $ref: '#/components/schemas/FraudDetectionResult'
+        PhishingDetection:
+          $ref: '#/components/schemas/PhishingDetectionFileResult'
+        SpamDetection:
+          $ref: '#/components/schemas/SpamDetectionResult'
+        DlpDetection:
+          $ref: '#/components/schemas/DlpDetectionResult'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementResult'
+      type: object
+    FraudDetectionConfig:
+      additionalProperties: false
+      description: Fraud detection configuration
+      example:
+        Preprocessing: Auto
+        Enabled: true
+        ResultCrossCheck: None
+        UserEmailAddress: UserEmailAddress
+        UserEmailAddressVerified: false
+      properties:
+        Enabled:
+          description: Enable fraud detection
+          example: true
+          type: boolean
+        Preprocessing:
+          description: "Preprocessing mode: Auto or None"
+          example: Auto
+          type: string
+        ResultCrossCheck:
+          description: "Result cross-check mode: None or Advanced"
+          example: None
+          type: string
+        UserEmailAddress:
+          description: User email address for verification context
+          type: string
+        UserEmailAddressVerified:
+          description: Whether the user email has been verified
+          example: false
+          type: boolean
+      type: object
+    FraudDetectionResult:
+      additionalProperties: false
+      description: Fraud detection result
+      example:
+        ContainsAssetTransfer: true
+        ContainsEmploymentAgreement: true
+        Skipped: true
+        Enabled: true
+        ContainsFinancialLiability: true
+        ContainsPurchaseAgreement: true
+        SkipReason: SkipReason
+        ContainsAiGeneratedContent: true
+        Successful: true
+        AnalysisRationale: AnalysisRationale
+        CleanResult: true
+        ContainsSensitiveInformationCollection: true
+        DocumentClass: DocumentClass
+        FraudRiskLevel: 1.4658129805029452
+        ContainsExpiredDocument: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no fraud was detected
+          type: boolean
+        FraudRiskLevel:
+          description: Fraud risk level (0.0 to 1.0)
+          format: double
+          type: number
+        ContainsFinancialLiability:
+          description: Document contains financial liability language
+          type: boolean
+        ContainsSensitiveInformationCollection:
+          description: Document collects sensitive information
+          type: boolean
+        ContainsAssetTransfer:
+          description: Document involves asset transfer
+          type: boolean
+        ContainsPurchaseAgreement:
+          description: Document is a purchase agreement
+          type: boolean
+        ContainsEmploymentAgreement:
+          description: Document is an employment agreement
+          type: boolean
+        ContainsExpiredDocument:
+          description: Document is expired
+          type: boolean
+        ContainsAiGeneratedContent:
+          description: Document contains AI-generated content
+          type: boolean
+        AnalysisRationale:
+          description: Analysis rationale
+          type: string
+        DocumentClass:
+          description: Document class/type
+          type: string
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    MultiThreatFileResponse:
+      additionalProperties: false
+      description: Response from a multi-threat file scan
+      example:
+        ScanResults:
+          PhishingDetection:
+            ContainsPhishing: true
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            Successful: true
+            CleanResult: true
+          SpamDetection:
+            ContainsSpam: true
+            ContainsUnsolicitedSales: true
+            ContainsPhishingAttempt: true
+            SpamRiskLevel: 6.027456183070403
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsPromotionalContent: true
+          NsfwDetection:
+            ContainsNonGraphicViolence: true
+            ContainsPotentialIllegalActivity: true
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            ContainsGraphicViolence: true
+            ContainsMedicalImagery: true
+            Successful: true
+            ContainsHate: true
+            CleanResult: true
+            ContainsNudity: true
+            Score: 0.8008281904610115
+            ClassificationOutcome: ClassificationOutcome
+            ContainsSelfHarm: true
+            ContainsProfanity: true
+          AiContentDetection:
+            AiConfidenceLevel: 6.027456183070403
+            DetectedFileType: DetectedFileType
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            ContainsAiGeneratedContent: true
+            Successful: true
+            Warnings:
+            - Warnings
+            - Warnings
+            CleanResult: true
+            Verdict: Verdict
+            Provider: Provider
+            Generator: Generator
+          VirusScan:
+            ContainsInvalidFile: true
+            ContainsRestrictedFileFormat: true
+            ContainsUnwantedAction: true
+            ContainsScript: true
+            ContainsOleEmbeddedObject: true
+            FoundViruses:
+            - FileName: FileName
+              VirusName: VirusName
+            - FileName: FileName
+              VirusName: VirusName
+            ContentInformation:
+              Hash_SHA1: Hash_SHA1
+              ContainsJSON: true
+              IsAuthenticodeSigned: true
+              RelevantSubfileName: RelevantSubfileName
+              ContainsImage: true
+              ContainsXML: true
+              RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+            Enabled: true
+            ContainsMacros: true
+            ContainsXmlExternalEntities: true
+            Successful: true
+            CleanResult: true
+            ContainsInsecureDeserialization: true
+            ContainsHtml: true
+            ContainsExecutable: true
+            VerifiedFileFormat: VerifiedFileFormat
+            ContainsUnsafeArchive: true
+            ErrorMessage: ErrorMessage
+            ContainsPasswordProtectedFile: true
+          DlpDetection:
+            ContainsMedicalTreatmentDates: true
+            ContainsPersonNames: true
+            ContainsDeepWebUrls: true
+            ContainsPassportNumbers: true
+            ContainsSocialSecurityNumbers: true
+            AnalysisRationale: AnalysisRationale
+            ContainsHttpCookies: true
+            ContainsPrivateKeys: true
+            ContainsSourceCode: true
+            ContainsPhoneNumbers: true
+            ContainsTaxpayerIds: true
+            ContainsBearerTokens: true
+            ContainsInjuryDiseaseReferences: true
+            ContainsHealthInsuranceMemberIds: true
+            ContainsBirthDates: true
+            ContainsCreditCardNumbers: true
+            ContainsHealthPlanBeneficiaryNumbers: true
+            ContainsTreatmentTypeDescriptions: true
+            ContainsVehicleIds: true
+            Skipped: true
+            Enabled: true
+            ContainsIbans: true
+            ContainsTreatmentPayments: true
+            SkipReason: SkipReason
+            ContainsHealthInsuranceNumbers: true
+            Successful: true
+            ContainsMacAddresses: true
+            CleanResult: true
+            ContainsDeviceIds: true
+            ContainsIpAddresses: true
+            ContainsStreetAddresses: true
+            ContainsEmailAddresses: true
+            ContainsBankAccountNumbers: true
+            ContainsCredentials: true
+            ContainsDriversLicenses: true
+          FraudDetection:
+            ContainsAssetTransfer: true
+            ContainsEmploymentAgreement: true
+            Skipped: true
+            Enabled: true
+            ContainsFinancialLiability: true
+            ContainsPurchaseAgreement: true
+            SkipReason: SkipReason
+            ContainsAiGeneratedContent: true
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsSensitiveInformationCollection: true
+            DocumentClass: DocumentClass
+            FraudRiskLevel: 1.4658129805029452
+            ContainsExpiredDocument: true
+          PolicyEnforcement:
+            Skipped: true
+            Enabled: true
+            RiskScore: 1.4658129805029452
+            RuleViolations:
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            SkipReason: SkipReason
+            Successful: true
+            CleanResult: true
+        VerifiedFileFormat: .pdf
+        Successful: true
+        CleanResult: true
+      properties:
+        Successful:
+          description: True if the scan completed successfully
+          example: true
+          type: boolean
+        CleanResult:
+          description: True if all enabled scans returned clean results
+          example: true
+          type: boolean
+        VerifiedFileFormat:
+          description: Content-verified file format from virus scan
+          example: .pdf
+          type: string
+        ScanResults:
+          $ref: '#/components/schemas/FileScanResults'
+      type: object
+    MultiThreatTextRequest:
+      additionalProperties: false
+      description: Request to scan text for multiple threat types
+      example:
+        PhishingDetection:
+          AllowWebUrls: true
+          FromEmailAddress: FromEmailAddress
+          Enabled: true
+          AllowPhoneNumbers: true
+          FromPhoneNumber: FromPhoneNumber
+          AllowUnsolicitedSales: true
+          ProvideUrlAnalysis: true
+          TextType: EmailMessage
+          ToPhoneNumber: ToPhoneNumber
+          FromName: FromName
+          CustomPolicyID: CustomPolicyID
+          Model: Advanced
+          ProvideAnalysisRationale: true
+          AllowEmailAddresses: true
+          ToName: ToName
+          AllowPromotionalContent: true
+          ToEmailAddress: ToEmailAddress
+        SpamDetection:
+          AllowPhishing: false
+          Model: Advanced
+          Enabled: true
+          AllowUnsolicitedSales: false
+          AllowPromotionalContent: true
+        VirusScan:
+          AllowPasswordProtectedFiles: false
+          Options: Options
+          AllowExecutables: false
+          AllowXmlExternalEntities: false
+          AllowInvalidFiles: false
+          Enabled: true
+          AllowScripts: false
+          AllowUnsafeArchives: false
+          AllowUnwantedAction: false
+          AllowHtml: false
+          AllowMacros: false
+          AllowOleEmbeddedObject: false
+          RestrictFileTypes: ".pdf,.docx,.png"
+          AllowInsecureDeserialization: false
+        DlpDetection:
+          AllowBearerTokens: false
+          AllowMacAddresses: false
+          AllowPhoneNumbers: false
+          AllowTreatmentPayments: false
+          AllowHealthPlanBeneficiaryNumbers: false
+          AllowPassportNumbers: false
+          AllowDeviceIds: false
+          AllowDeepWebUrls: false
+          AllowHealthInsuranceMemberIds: false
+          AllowHttpCookies: false
+          AllowPrivateKeys: false
+          AllowDriversLicenses: false
+          AllowTreatmentTypeDescriptions: false
+          ProvideAnalysisRationale: true
+          AllowBankAccountNumbers: false
+          AllowCreditCardNumbers: false
+          AllowEmailAddresses: false
+          AllowIbans: false
+          AllowSourceCode: false
+          AllowCredentials: false
+          AllowTaxpayerIds: false
+          AllowMedicalTreatmentDates: false
+          AllowPersonNames: false
+          Enabled: true
+          AllowStreetAddresses: false
+          AllowIpAddresses: false
+          AllowBirthDates: false
+          AllowInjuryDiseaseReferences: false
+          CustomPolicyID: CustomPolicyID
+          AllowHealthInsuranceNumbers: false
+          AllowSocialSecurityNumbers: false
+          AllowVehicleIds: false
+        TextContent: Check out this amazing offer at http://example.com
+        PolicyEnforcement:
+          Enabled: false
+          Rules:
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+      properties:
+        TextContent:
+          description: The text content to scan
+          example: Check out this amazing offer at http://example.com
+          type: string
+        VirusScan:
+          $ref: '#/components/schemas/VirusScanConfig'
+        PhishingDetection:
+          $ref: '#/components/schemas/PhishingDetectionTextConfig'
+        SpamDetection:
+          $ref: '#/components/schemas/SpamDetectionConfig'
+        DlpDetection:
+          $ref: '#/components/schemas/DlpDetectionConfig'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementConfig'
+      type: object
+    MultiThreatTextResponse:
+      additionalProperties: false
+      description: Response from a multi-threat text scan
+      example:
+        ScanResults:
+          PhishingDetection:
+            ConfidenceLevel: 0.8008281904610115
+            ContainsUnsolicitedSales: true
+            ContainsWebUrls: true
+            ContainsPhishing: true
+            ContainsPhoneNumbers: true
+            ContainsEmailAddresses: true
+            Enabled: true
+            UnsafeUrls:
+            - IsSsrfThreat: true
+              ContainsPhishing: true
+              Url: Url
+              CleanResult: true
+            - IsSsrfThreat: true
+              ContainsPhishing: true
+              Url: Url
+              CleanResult: true
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsPromotionalContent: true
+          SpamDetection:
+            ContainsSpam: true
+            ContainsUnsolicitedSales: true
+            ContainsPhishingAttempt: true
+            SpamRiskLevel: 6.027456183070403
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsPromotionalContent: true
+          VirusScan:
+            ContainsInvalidFile: true
+            ContainsRestrictedFileFormat: true
+            ContainsUnwantedAction: true
+            ContainsScript: true
+            ContainsOleEmbeddedObject: true
+            FoundViruses:
+            - FileName: FileName
+              VirusName: VirusName
+            - FileName: FileName
+              VirusName: VirusName
+            ContentInformation:
+              Hash_SHA1: Hash_SHA1
+              ContainsJSON: true
+              IsAuthenticodeSigned: true
+              RelevantSubfileName: RelevantSubfileName
+              ContainsImage: true
+              ContainsXML: true
+              RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+            Enabled: true
+            ContainsMacros: true
+            ContainsXmlExternalEntities: true
+            Successful: true
+            CleanResult: true
+            ContainsInsecureDeserialization: true
+            ContainsHtml: true
+            ContainsExecutable: true
+            VerifiedFileFormat: VerifiedFileFormat
+            ContainsUnsafeArchive: true
+            ErrorMessage: ErrorMessage
+            ContainsPasswordProtectedFile: true
+          DlpDetection:
+            ContainsMedicalTreatmentDates: true
+            ContainsPersonNames: true
+            ContainsDeepWebUrls: true
+            ContainsPassportNumbers: true
+            ContainsSocialSecurityNumbers: true
+            AnalysisRationale: AnalysisRationale
+            ContainsHttpCookies: true
+            ContainsPrivateKeys: true
+            ContainsSourceCode: true
+            ContainsPhoneNumbers: true
+            ContainsTaxpayerIds: true
+            ContainsBearerTokens: true
+            ContainsInjuryDiseaseReferences: true
+            ContainsHealthInsuranceMemberIds: true
+            ContainsBirthDates: true
+            ContainsCreditCardNumbers: true
+            ContainsHealthPlanBeneficiaryNumbers: true
+            ContainsTreatmentTypeDescriptions: true
+            ContainsVehicleIds: true
+            Skipped: true
+            Enabled: true
+            ContainsIbans: true
+            ContainsTreatmentPayments: true
+            SkipReason: SkipReason
+            ContainsHealthInsuranceNumbers: true
+            Successful: true
+            ContainsMacAddresses: true
+            CleanResult: true
+            ContainsDeviceIds: true
+            ContainsIpAddresses: true
+            ContainsStreetAddresses: true
+            ContainsEmailAddresses: true
+            ContainsBankAccountNumbers: true
+            ContainsCredentials: true
+            ContainsDriversLicenses: true
+          PolicyEnforcement:
+            Skipped: true
+            Enabled: true
+            RiskScore: 1.4658129805029452
+            RuleViolations:
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            SkipReason: SkipReason
+            Successful: true
+            CleanResult: true
+        Successful: true
+        CleanResult: true
+      properties:
+        Successful:
+          description: True if the scan completed successfully
+          example: true
+          type: boolean
+        CleanResult:
+          description: True if all enabled scans returned clean results
+          example: true
+          type: boolean
+        ScanResults:
+          $ref: '#/components/schemas/TextScanResults'
+      type: object
+    MultiThreatUrlRequest:
+      additionalProperties: false
+      description: Request to scan a URL for multiple threat types
+      example:
+        PhishingDetection:
+          CustomPolicyID: CustomPolicyID
+          Enabled: true
+        ContentScanning:
+          DownloadAndScan: true
+          SpamDetection:
+            Preprocessing: Auto
+            AllowPhishing: false
+            Model: Advanced
+            Enabled: true
+            AllowUnsolicitedSales: false
+            AllowPromotionalContent: true
+          Enabled: false
+          NsfwDetection:
+            Enabled: true
+          AiContentDetection:
+            Enabled: true
+          DlpDetection:
+            AllowBearerTokens: false
+            AllowMacAddresses: false
+            AllowPhoneNumbers: false
+            AllowTreatmentPayments: false
+            AllowHealthPlanBeneficiaryNumbers: false
+            AllowPassportNumbers: false
+            AllowDeviceIds: false
+            AllowDeepWebUrls: false
+            AllowHealthInsuranceMemberIds: false
+            AllowHttpCookies: false
+            AllowPrivateKeys: false
+            AllowDriversLicenses: false
+            AllowTreatmentTypeDescriptions: false
+            ProvideAnalysisRationale: true
+            AllowBankAccountNumbers: false
+            AllowCreditCardNumbers: false
+            AllowEmailAddresses: false
+            AllowIbans: false
+            AllowSourceCode: false
+            AllowCredentials: false
+            AllowTaxpayerIds: false
+            AllowMedicalTreatmentDates: false
+            AllowPersonNames: false
+            RecognitionMode: Fast
+            Enabled: true
+            AllowStreetAddresses: false
+            AllowIpAddresses: false
+            AllowBirthDates: false
+            AllowInjuryDiseaseReferences: false
+            CustomPolicyID: CustomPolicyID
+            AllowHealthInsuranceNumbers: false
+            AllowSocialSecurityNumbers: false
+            AllowVehicleIds: false
+          FraudDetection:
+            Preprocessing: Auto
+            Enabled: true
+            ResultCrossCheck: None
+            UserEmailAddress: UserEmailAddress
+            UserEmailAddressVerified: false
+          PolicyEnforcement:
+            Enabled: false
+            Rules:
+            - RuleDescription: Documents must not contain financial advice
+              RuleId: RULE-001
+              RuleType: DENY
+            - RuleDescription: Documents must not contain financial advice
+              RuleId: RULE-001
+              RuleType: DENY
+        VirusScan:
+          Enabled: true
+        Url: https://example.com
+        PolicyEnforcement:
+          Enabled: false
+          Rules:
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+          - RuleDescription: Documents must not contain financial advice
+            RuleId: RULE-001
+            RuleType: DENY
+      properties:
+        Url:
+          description: The URL to scan (must include http:// or https://)
+          example: https://example.com
+          type: string
+        VirusScan:
+          $ref: '#/components/schemas/UrlVirusScanConfig'
+        PhishingDetection:
+          $ref: '#/components/schemas/UrlPhishingDetectionConfig'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementConfig'
+        ContentScanning:
+          $ref: '#/components/schemas/ContentScanningConfig'
+      type: object
+    MultiThreatUrlResponse:
+      additionalProperties: false
+      description: Response from a multi-threat URL scan
+      example:
+        ScanResults:
+          PhishingDetection:
+            PhishingRiskLevel: 6.027456183070403
+            IsSsrfThreat: true
+            ContainsUnsolicitedSales: true
+            ContainsPhishingAttempt: true
+            ContainsPhishing: true
+            Enabled: true
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsPromotionalContent: true
+          ContentScanning:
+            DownloadedFileFormat: DownloadedFileFormat
+            SpamDetection:
+              ContainsSpam: true
+              ContainsUnsolicitedSales: true
+              ContainsPhishingAttempt: true
+              SpamRiskLevel: 6.027456183070403
+              Skipped: true
+              Enabled: true
+              SkipReason: SkipReason
+              Successful: true
+              AnalysisRationale: AnalysisRationale
+              CleanResult: true
+              ContainsPromotionalContent: true
+            Enabled: true
+            NsfwDetection:
+              ContainsNonGraphicViolence: true
+              ContainsPotentialIllegalActivity: true
+              Skipped: true
+              Enabled: true
+              SkipReason: SkipReason
+              ContainsGraphicViolence: true
+              ContainsMedicalImagery: true
+              Successful: true
+              ContainsHate: true
+              CleanResult: true
+              ContainsNudity: true
+              Score: 0.8008281904610115
+              ClassificationOutcome: ClassificationOutcome
+              ContainsSelfHarm: true
+              ContainsProfanity: true
+            AiContentDetection:
+              AiConfidenceLevel: 6.027456183070403
+              DetectedFileType: DetectedFileType
+              Skipped: true
+              Enabled: true
+              SkipReason: SkipReason
+              ContainsAiGeneratedContent: true
+              Successful: true
+              Warnings:
+              - Warnings
+              - Warnings
+              CleanResult: true
+              Verdict: Verdict
+              Provider: Provider
+              Generator: Generator
+            DlpDetection:
+              ContainsMedicalTreatmentDates: true
+              ContainsPersonNames: true
+              ContainsDeepWebUrls: true
+              ContainsPassportNumbers: true
+              ContainsSocialSecurityNumbers: true
+              AnalysisRationale: AnalysisRationale
+              ContainsHttpCookies: true
+              ContainsPrivateKeys: true
+              ContainsSourceCode: true
+              ContainsPhoneNumbers: true
+              ContainsTaxpayerIds: true
+              ContainsBearerTokens: true
+              ContainsInjuryDiseaseReferences: true
+              ContainsHealthInsuranceMemberIds: true
+              ContainsBirthDates: true
+              ContainsCreditCardNumbers: true
+              ContainsHealthPlanBeneficiaryNumbers: true
+              ContainsTreatmentTypeDescriptions: true
+              ContainsVehicleIds: true
+              Skipped: true
+              Enabled: true
+              ContainsIbans: true
+              ContainsTreatmentPayments: true
+              SkipReason: SkipReason
+              ContainsHealthInsuranceNumbers: true
+              Successful: true
+              ContainsMacAddresses: true
+              CleanResult: true
+              ContainsDeviceIds: true
+              ContainsIpAddresses: true
+              ContainsStreetAddresses: true
+              ContainsEmailAddresses: true
+              ContainsBankAccountNumbers: true
+              ContainsCredentials: true
+              ContainsDriversLicenses: true
+            FraudDetection:
+              ContainsAssetTransfer: true
+              ContainsEmploymentAgreement: true
+              Skipped: true
+              Enabled: true
+              ContainsFinancialLiability: true
+              ContainsPurchaseAgreement: true
+              SkipReason: SkipReason
+              ContainsAiGeneratedContent: true
+              Successful: true
+              AnalysisRationale: AnalysisRationale
+              CleanResult: true
+              ContainsSensitiveInformationCollection: true
+              DocumentClass: DocumentClass
+              FraudRiskLevel: 1.4658129805029452
+              ContainsExpiredDocument: true
+            PolicyEnforcement:
+              Skipped: true
+              Enabled: true
+              RiskScore: 1.4658129805029452
+              RuleViolations:
+              - RuleId: RuleId
+                RuleViolationRiskScore: 5.962133916683182
+                RuleViolationRationale: RuleViolationRationale
+              - RuleId: RuleId
+                RuleViolationRiskScore: 5.962133916683182
+                RuleViolationRationale: RuleViolationRationale
+              SkipReason: SkipReason
+              Successful: true
+              CleanResult: true
+          VirusScan:
+            WebsiteHttpResponseCode: 0
+            FoundViruses:
+            - FileName: FileName
+              VirusName: VirusName
+            - FileName: FileName
+              VirusName: VirusName
+            Enabled: true
+            Successful: true
+            CleanResult: true
+            WebsiteThreatType: WebsiteThreatType
+          PolicyEnforcement:
+            Skipped: true
+            Enabled: true
+            RiskScore: 1.4658129805029452
+            RuleViolations:
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            SkipReason: SkipReason
+            Successful: true
+            CleanResult: true
+        Successful: true
+        CleanResult: true
+      properties:
+        Successful:
+          description: True if the scan completed successfully
+          example: true
+          type: boolean
+        CleanResult:
+          description: True if all enabled scans returned clean results
+          example: true
+          type: boolean
+        ScanResults:
+          $ref: '#/components/schemas/UrlScanResults'
+      type: object
+    NsfwDetectionConfig:
+      additionalProperties: false
+      description: NSFW detection configuration
+      example:
+        Enabled: true
+      properties:
+        Enabled:
+          description: Enable NSFW detection
+          example: true
+          type: boolean
+      type: object
+    NsfwDetectionResult:
+      additionalProperties: false
+      description: NSFW detection result
+      example:
+        ContainsNonGraphicViolence: true
+        ContainsPotentialIllegalActivity: true
+        Skipped: true
+        Enabled: true
+        SkipReason: SkipReason
+        ContainsGraphicViolence: true
+        ContainsMedicalImagery: true
+        Successful: true
+        ContainsHate: true
+        CleanResult: true
+        ContainsNudity: true
+        Score: 0.8008281904610115
+        ClassificationOutcome: ClassificationOutcome
+        ContainsSelfHarm: true
+        ContainsProfanity: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no NSFW content was found
+          type: boolean
+        ContainsNudity:
+          description: Image contains nudity
+          type: boolean
+        ContainsGraphicViolence:
+          description: Image contains graphic violence
+          type: boolean
+        ContainsNonGraphicViolence:
+          description: Image contains non-graphic violence
+          type: boolean
+        ContainsSelfHarm:
+          description: Image contains self-harm content
+          type: boolean
+        ContainsHate:
+          description: Image contains hate content
+          type: boolean
+        ContainsPotentialIllegalActivity:
+          description: Image contains potential illegal activity
+          type: boolean
+        ContainsMedicalImagery:
+          description: Image contains medical imagery
+          type: boolean
+        ContainsProfanity:
+          description: Image contains profanity
+          type: boolean
+        Score:
+          description: NSFW score (0.0 to 1.0)
+          format: double
+          type: number
+        ClassificationOutcome:
+          description: Classification outcome
+          type: string
+        Skipped:
+          description: Scan was skipped (unsupported format)
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    PhishingDetectionFileResult:
+      additionalProperties: false
+      description: Phishing detection result for file scanning
+      example:
+        ContainsPhishing: true
+        Skipped: true
+        Enabled: true
+        SkipReason: SkipReason
+        Successful: true
+        CleanResult: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no phishing was detected
+          type: boolean
+        ContainsPhishing:
+          description: File contains phishing
+          type: boolean
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    PhishingDetectionTextConfig:
+      additionalProperties: false
+      description: Phishing detection configuration for text scanning
+      example:
+        AllowWebUrls: true
+        FromEmailAddress: FromEmailAddress
+        Enabled: true
+        AllowPhoneNumbers: true
+        FromPhoneNumber: FromPhoneNumber
+        AllowUnsolicitedSales: true
+        ProvideUrlAnalysis: true
+        TextType: EmailMessage
+        ToPhoneNumber: ToPhoneNumber
+        FromName: FromName
+        CustomPolicyID: CustomPolicyID
+        Model: Advanced
+        ProvideAnalysisRationale: true
+        AllowEmailAddresses: true
+        ToName: ToName
+        AllowPromotionalContent: true
+        ToEmailAddress: ToEmailAddress
+      properties:
+        Enabled:
+          description: Enable phishing detection
+          example: true
+          type: boolean
+        TextType:
+          description: "Type of text: TextMessage, UserMessage, SalesLead, EmailMessage,\
+            \ SupportCase, AppMessage, Other"
+          example: EmailMessage
+          type: string
+        Model:
+          description: "Model to use: Normal or Advanced"
+          example: Advanced
+          type: string
+        AllowUnsolicitedSales:
+          description: Allow unsolicited sales content
+          example: true
+          type: boolean
+        AllowPromotionalContent:
+          description: Allow promotional content
+          example: true
+          type: boolean
+        AllowWebUrls:
+          description: Allow web URLs in content
+          example: true
+          type: boolean
+        AllowPhoneNumbers:
+          description: Allow phone numbers in content
+          example: true
+          type: boolean
+        AllowEmailAddresses:
+          description: Allow email addresses in content
+          example: true
+          type: boolean
+        ProvideUrlAnalysis:
+          description: Provide URL analysis details
+          example: true
+          type: boolean
+        CustomPolicyID:
+          description: Custom policy ID for managed instances
+          type: string
+        ProvideAnalysisRationale:
+          description: Provide analysis rationale in response
+          example: true
+          type: boolean
+        FromName:
+          description: Name of the sender
+          type: string
+        ToName:
+          description: Name of the recipient
+          type: string
+        FromPhoneNumber:
+          description: Phone number of the sender
+          type: string
+        ToPhoneNumber:
+          description: Phone number of the recipient
+          type: string
+        FromEmailAddress:
+          description: Email address of the sender
+          type: string
+        ToEmailAddress:
+          description: Email address of the recipient
+          type: string
+      type: object
+    PhishingDetectionTextResult:
+      additionalProperties: false
+      description: Phishing detection result for text scanning
+      example:
+        ConfidenceLevel: 0.8008281904610115
+        ContainsUnsolicitedSales: true
+        ContainsWebUrls: true
+        ContainsPhishing: true
+        ContainsPhoneNumbers: true
+        ContainsEmailAddresses: true
+        Enabled: true
+        UnsafeUrls:
+        - IsSsrfThreat: true
+          ContainsPhishing: true
+          Url: Url
+          CleanResult: true
+        - IsSsrfThreat: true
+          ContainsPhishing: true
+          Url: Url
+          CleanResult: true
+        Successful: true
+        AnalysisRationale: AnalysisRationale
+        CleanResult: true
+        ContainsPromotionalContent: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no phishing was detected
+          type: boolean
+        ContainsPhishing:
+          description: Text contains phishing
+          type: boolean
+        ContainsUnsolicitedSales:
+          description: Text contains unsolicited sales
+          type: boolean
+        ContainsPromotionalContent:
+          description: Text contains promotional content
+          type: boolean
+        ContainsWebUrls:
+          description: Text contains web URLs
+          type: boolean
+        ContainsPhoneNumbers:
+          description: Text contains phone numbers
+          type: boolean
+        ContainsEmailAddresses:
+          description: Text contains email addresses
+          type: boolean
+        ConfidenceLevel:
+          description: Confidence level (0.0 to 1.0)
+          format: double
+          type: number
+        AnalysisRationale:
+          description: Analysis rationale
+          type: string
+        UnsafeUrls:
+          description: List of unsafe URLs found
+          items:
+            $ref: '#/components/schemas/UnsafeUrlInfo'
+          type: array
+      type: object
+    PhishingDetectionUrlResult:
+      additionalProperties: false
+      description: Phishing detection result for URL scanning
+      example:
+        PhishingRiskLevel: 6.027456183070403
+        IsSsrfThreat: true
+        ContainsUnsolicitedSales: true
+        ContainsPhishingAttempt: true
+        ContainsPhishing: true
+        Enabled: true
+        Successful: true
+        AnalysisRationale: AnalysisRationale
+        CleanResult: true
+        ContainsPromotionalContent: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no phishing was detected
+          type: boolean
+        PhishingRiskLevel:
+          description: Phishing risk level (0.0 to 1.0)
+          format: double
+          type: number
+        IsSsrfThreat:
+          description: URL is a server-side request forgery threat
+          type: boolean
+        ContainsPhishing:
+          description: URL contains phishing
+          type: boolean
+        ContainsUnsolicitedSales:
+          description: URL contains unsolicited sales
+          type: boolean
+        ContainsPromotionalContent:
+          description: URL contains promotional content
+          type: boolean
+        ContainsPhishingAttempt:
+          description: URL contains phishing attempt
+          type: boolean
+        AnalysisRationale:
+          description: Analysis rationale
+          type: string
+      type: object
+    PolicyEnforcementConfig:
+      additionalProperties: false
+      description: Policy enforcement configuration with custom rules
+      example:
+        Enabled: false
+        Rules:
+        - RuleDescription: Documents must not contain financial advice
+          RuleId: RULE-001
+          RuleType: DENY
+        - RuleDescription: Documents must not contain financial advice
+          RuleId: RULE-001
+          RuleType: DENY
+      properties:
+        Enabled:
+          description: Enable policy enforcement
+          example: false
+          type: boolean
+        Rules:
+          description: List of policy rules to enforce
+          items:
+            $ref: '#/components/schemas/PolicyRule'
+          type: array
+      type: object
+    PolicyEnforcementResult:
+      additionalProperties: false
+      description: Policy enforcement result
+      example:
+        Skipped: true
+        Enabled: true
+        RiskScore: 1.4658129805029452
+        RuleViolations:
+        - RuleId: RuleId
+          RuleViolationRiskScore: 5.962133916683182
+          RuleViolationRationale: RuleViolationRationale
+        - RuleId: RuleId
+          RuleViolationRiskScore: 5.962133916683182
+          RuleViolationRationale: RuleViolationRationale
+        SkipReason: SkipReason
+        Successful: true
+        CleanResult: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no policy violations were found
+          type: boolean
+        RiskScore:
+          description: Overall risk score (0.0 to 1.0)
+          format: double
+          type: number
+        RuleViolations:
+          description: List of rule violations found
+          items:
+            $ref: '#/components/schemas/PolicyRuleViolation'
+          type: array
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    PolicyRule:
+      additionalProperties: false
+      description: A single policy rule
+      example:
+        RuleDescription: Documents must not contain financial advice
+        RuleId: RULE-001
+        RuleType: DENY
+      properties:
+        RuleId:
+          description: Unique rule identifier
+          example: RULE-001
+          type: string
+        RuleType:
+          description: "Rule type: ALLOW or DENY"
+          example: DENY
+          type: string
+        RuleDescription:
+          description: Natural language description of the policy rule
+          example: Documents must not contain financial advice
+          type: string
+      type: object
+    PolicyRuleViolation:
+      additionalProperties: false
+      description: A single policy rule violation
+      example:
+        RuleId: RuleId
+        RuleViolationRiskScore: 5.962133916683182
+        RuleViolationRationale: RuleViolationRationale
+      properties:
+        RuleId:
+          description: ID of the violated rule
+          type: string
+        RuleViolationRiskScore:
+          description: Risk score for this violation (0.0 to 1.0)
+          format: double
+          type: number
+        RuleViolationRationale:
+          description: Rationale for the violation
+          type: string
+      type: object
+    SpamDetectionConfig:
+      additionalProperties: false
+      description: Spam detection configuration
+      example:
+        AllowPhishing: false
+        Model: Advanced
+        Enabled: true
+        AllowUnsolicitedSales: false
+        AllowPromotionalContent: true
+      properties:
+        Enabled:
+          description: Enable spam detection
+          example: true
+          type: boolean
+        Model:
+          description: "Model to use: Normal or Advanced"
+          example: Advanced
+          type: string
+        AllowUnsolicitedSales:
+          description: Allow unsolicited sales content
+          example: false
+          type: boolean
+        AllowPromotionalContent:
+          description: Allow promotional content
+          example: true
+          type: boolean
+        AllowPhishing:
+          description: Allow phishing content
+          example: false
+          type: boolean
+      type: object
+    SpamDetectionFileConfig:
+      additionalProperties: false
+      description: Spam detection configuration for file scanning
+      example:
+        Preprocessing: Auto
+        AllowPhishing: false
+        Model: Advanced
+        Enabled: true
+        AllowUnsolicitedSales: false
+        AllowPromotionalContent: true
+      properties:
+        Enabled:
+          description: Enable spam detection
+          example: true
+          type: boolean
+        Model:
+          description: "Model to use: Normal or Advanced"
+          example: Advanced
+          type: string
+        Preprocessing:
+          description: "Preprocessing mode: None, Compatability, Auto"
+          example: Auto
+          type: string
+        AllowPhishing:
+          description: Allow phishing content
+          example: false
+          type: boolean
+        AllowUnsolicitedSales:
+          description: Allow unsolicited sales
+          example: false
+          type: boolean
+        AllowPromotionalContent:
+          description: Allow promotional content
+          example: true
+          type: boolean
+      type: object
+    SpamDetectionResult:
+      additionalProperties: false
+      description: Spam detection result
+      example:
+        ContainsSpam: true
+        ContainsUnsolicitedSales: true
+        ContainsPhishingAttempt: true
+        SpamRiskLevel: 6.027456183070403
+        Skipped: true
+        Enabled: true
+        SkipReason: SkipReason
+        Successful: true
+        AnalysisRationale: AnalysisRationale
+        CleanResult: true
+        ContainsPromotionalContent: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no spam was detected
+          type: boolean
+        SpamRiskLevel:
+          description: Spam risk level (0.0 to 1.0)
+          format: double
+          type: number
+        ContainsSpam:
+          description: Content contains spam
+          type: boolean
+        ContainsUnsolicitedSales:
+          description: Content contains unsolicited sales
+          type: boolean
+        ContainsPromotionalContent:
+          description: Content contains promotional material
+          type: boolean
+        ContainsPhishingAttempt:
+          description: Content contains phishing attempt
+          type: boolean
+        AnalysisRationale:
+          description: Analysis rationale
+          type: string
+        Skipped:
+          description: Scan was skipped
+          type: boolean
+        SkipReason:
+          description: Reason the scan was skipped
+          type: string
+      type: object
+    TextScanResults:
+      additionalProperties: false
+      description: Individual scan results for a text scan
+      example:
+        PhishingDetection:
+          ConfidenceLevel: 0.8008281904610115
+          ContainsUnsolicitedSales: true
+          ContainsWebUrls: true
+          ContainsPhishing: true
+          ContainsPhoneNumbers: true
+          ContainsEmailAddresses: true
+          Enabled: true
+          UnsafeUrls:
+          - IsSsrfThreat: true
+            ContainsPhishing: true
+            Url: Url
+            CleanResult: true
+          - IsSsrfThreat: true
+            ContainsPhishing: true
+            Url: Url
+            CleanResult: true
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsPromotionalContent: true
+        SpamDetection:
+          ContainsSpam: true
+          ContainsUnsolicitedSales: true
+          ContainsPhishingAttempt: true
+          SpamRiskLevel: 6.027456183070403
+          Skipped: true
+          Enabled: true
+          SkipReason: SkipReason
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsPromotionalContent: true
+        VirusScan:
+          ContainsInvalidFile: true
+          ContainsRestrictedFileFormat: true
+          ContainsUnwantedAction: true
+          ContainsScript: true
+          ContainsOleEmbeddedObject: true
+          FoundViruses:
+          - FileName: FileName
+            VirusName: VirusName
+          - FileName: FileName
+            VirusName: VirusName
+          ContentInformation:
+            Hash_SHA1: Hash_SHA1
+            ContainsJSON: true
+            IsAuthenticodeSigned: true
+            RelevantSubfileName: RelevantSubfileName
+            ContainsImage: true
+            ContainsXML: true
+            RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+          Enabled: true
+          ContainsMacros: true
+          ContainsXmlExternalEntities: true
+          Successful: true
+          CleanResult: true
+          ContainsInsecureDeserialization: true
+          ContainsHtml: true
+          ContainsExecutable: true
+          VerifiedFileFormat: VerifiedFileFormat
+          ContainsUnsafeArchive: true
+          ErrorMessage: ErrorMessage
+          ContainsPasswordProtectedFile: true
+        DlpDetection:
+          ContainsMedicalTreatmentDates: true
+          ContainsPersonNames: true
+          ContainsDeepWebUrls: true
+          ContainsPassportNumbers: true
+          ContainsSocialSecurityNumbers: true
+          AnalysisRationale: AnalysisRationale
+          ContainsHttpCookies: true
+          ContainsPrivateKeys: true
+          ContainsSourceCode: true
+          ContainsPhoneNumbers: true
+          ContainsTaxpayerIds: true
+          ContainsBearerTokens: true
+          ContainsInjuryDiseaseReferences: true
+          ContainsHealthInsuranceMemberIds: true
+          ContainsBirthDates: true
+          ContainsCreditCardNumbers: true
+          ContainsHealthPlanBeneficiaryNumbers: true
+          ContainsTreatmentTypeDescriptions: true
+          ContainsVehicleIds: true
+          Skipped: true
+          Enabled: true
+          ContainsIbans: true
+          ContainsTreatmentPayments: true
+          SkipReason: SkipReason
+          ContainsHealthInsuranceNumbers: true
+          Successful: true
+          ContainsMacAddresses: true
+          CleanResult: true
+          ContainsDeviceIds: true
+          ContainsIpAddresses: true
+          ContainsStreetAddresses: true
+          ContainsEmailAddresses: true
+          ContainsBankAccountNumbers: true
+          ContainsCredentials: true
+          ContainsDriversLicenses: true
+        PolicyEnforcement:
+          Skipped: true
+          Enabled: true
+          RiskScore: 1.4658129805029452
+          RuleViolations:
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          SkipReason: SkipReason
+          Successful: true
+          CleanResult: true
+      properties:
+        VirusScan:
+          $ref: '#/components/schemas/VirusScanResult'
+        PhishingDetection:
+          $ref: '#/components/schemas/PhishingDetectionTextResult'
+        SpamDetection:
+          $ref: '#/components/schemas/SpamDetectionResult'
+        DlpDetection:
+          $ref: '#/components/schemas/DlpDetectionResult'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementResult'
+      type: object
+    UnsafeUrlInfo:
+      additionalProperties: false
+      description: Information about an unsafe URL
+      example:
+        IsSsrfThreat: true
+        ContainsPhishing: true
+        Url: Url
+        CleanResult: true
+      properties:
+        Url:
+          description: The URL
+          type: string
+        CleanResult:
+          description: True if URL is clean
+          type: boolean
+        IsSsrfThreat:
+          description: URL is an SSRF threat
+          type: boolean
+        ContainsPhishing:
+          description: URL contains phishing
+          type: boolean
+      type: object
+    UrlPhishingDetectionConfig:
+      additionalProperties: false
+      description: URL-specific phishing detection configuration
+      example:
+        CustomPolicyID: CustomPolicyID
+        Enabled: true
+      properties:
+        Enabled:
+          description: Enable phishing detection
+          example: true
+          type: boolean
+        CustomPolicyID:
+          description: Custom policy ID
+          type: string
+      type: object
+    UrlScanResults:
+      additionalProperties: false
+      description: Individual scan results for a URL scan
+      example:
+        PhishingDetection:
+          PhishingRiskLevel: 6.027456183070403
+          IsSsrfThreat: true
+          ContainsUnsolicitedSales: true
+          ContainsPhishingAttempt: true
+          ContainsPhishing: true
+          Enabled: true
+          Successful: true
+          AnalysisRationale: AnalysisRationale
+          CleanResult: true
+          ContainsPromotionalContent: true
+        ContentScanning:
+          DownloadedFileFormat: DownloadedFileFormat
+          SpamDetection:
+            ContainsSpam: true
+            ContainsUnsolicitedSales: true
+            ContainsPhishingAttempt: true
+            SpamRiskLevel: 6.027456183070403
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsPromotionalContent: true
+          Enabled: true
+          NsfwDetection:
+            ContainsNonGraphicViolence: true
+            ContainsPotentialIllegalActivity: true
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            ContainsGraphicViolence: true
+            ContainsMedicalImagery: true
+            Successful: true
+            ContainsHate: true
+            CleanResult: true
+            ContainsNudity: true
+            Score: 0.8008281904610115
+            ClassificationOutcome: ClassificationOutcome
+            ContainsSelfHarm: true
+            ContainsProfanity: true
+          AiContentDetection:
+            AiConfidenceLevel: 6.027456183070403
+            DetectedFileType: DetectedFileType
+            Skipped: true
+            Enabled: true
+            SkipReason: SkipReason
+            ContainsAiGeneratedContent: true
+            Successful: true
+            Warnings:
+            - Warnings
+            - Warnings
+            CleanResult: true
+            Verdict: Verdict
+            Provider: Provider
+            Generator: Generator
+          DlpDetection:
+            ContainsMedicalTreatmentDates: true
+            ContainsPersonNames: true
+            ContainsDeepWebUrls: true
+            ContainsPassportNumbers: true
+            ContainsSocialSecurityNumbers: true
+            AnalysisRationale: AnalysisRationale
+            ContainsHttpCookies: true
+            ContainsPrivateKeys: true
+            ContainsSourceCode: true
+            ContainsPhoneNumbers: true
+            ContainsTaxpayerIds: true
+            ContainsBearerTokens: true
+            ContainsInjuryDiseaseReferences: true
+            ContainsHealthInsuranceMemberIds: true
+            ContainsBirthDates: true
+            ContainsCreditCardNumbers: true
+            ContainsHealthPlanBeneficiaryNumbers: true
+            ContainsTreatmentTypeDescriptions: true
+            ContainsVehicleIds: true
+            Skipped: true
+            Enabled: true
+            ContainsIbans: true
+            ContainsTreatmentPayments: true
+            SkipReason: SkipReason
+            ContainsHealthInsuranceNumbers: true
+            Successful: true
+            ContainsMacAddresses: true
+            CleanResult: true
+            ContainsDeviceIds: true
+            ContainsIpAddresses: true
+            ContainsStreetAddresses: true
+            ContainsEmailAddresses: true
+            ContainsBankAccountNumbers: true
+            ContainsCredentials: true
+            ContainsDriversLicenses: true
+          FraudDetection:
+            ContainsAssetTransfer: true
+            ContainsEmploymentAgreement: true
+            Skipped: true
+            Enabled: true
+            ContainsFinancialLiability: true
+            ContainsPurchaseAgreement: true
+            SkipReason: SkipReason
+            ContainsAiGeneratedContent: true
+            Successful: true
+            AnalysisRationale: AnalysisRationale
+            CleanResult: true
+            ContainsSensitiveInformationCollection: true
+            DocumentClass: DocumentClass
+            FraudRiskLevel: 1.4658129805029452
+            ContainsExpiredDocument: true
+          PolicyEnforcement:
+            Skipped: true
+            Enabled: true
+            RiskScore: 1.4658129805029452
+            RuleViolations:
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            - RuleId: RuleId
+              RuleViolationRiskScore: 5.962133916683182
+              RuleViolationRationale: RuleViolationRationale
+            SkipReason: SkipReason
+            Successful: true
+            CleanResult: true
+        VirusScan:
+          WebsiteHttpResponseCode: 0
+          FoundViruses:
+          - FileName: FileName
+            VirusName: VirusName
+          - FileName: FileName
+            VirusName: VirusName
+          Enabled: true
+          Successful: true
+          CleanResult: true
+          WebsiteThreatType: WebsiteThreatType
+        PolicyEnforcement:
+          Skipped: true
+          Enabled: true
+          RiskScore: 1.4658129805029452
+          RuleViolations:
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          - RuleId: RuleId
+            RuleViolationRiskScore: 5.962133916683182
+            RuleViolationRationale: RuleViolationRationale
+          SkipReason: SkipReason
+          Successful: true
+          CleanResult: true
+      properties:
+        VirusScan:
+          $ref: '#/components/schemas/VirusScanUrlResult'
+        PhishingDetection:
+          $ref: '#/components/schemas/PhishingDetectionUrlResult'
+        PolicyEnforcement:
+          $ref: '#/components/schemas/PolicyEnforcementResult'
+        ContentScanning:
+          $ref: '#/components/schemas/ContentScanningResult'
+      type: object
+    UrlVirusScanConfig:
+      additionalProperties: false
+      description: URL-specific virus scan configuration
+      example:
+        Enabled: true
+      properties:
+        Enabled:
+          description: Enable virus scanning
+          example: true
+          type: boolean
+      type: object
+    VirusFound:
+      additionalProperties: false
+      description: Virus found detail
+      example:
+        FileName: FileName
+        VirusName: VirusName
+      properties:
+        FileName:
+          description: Name of the file containing the virus
+          type: string
+        VirusName:
+          description: Name of the virus
+          type: string
+      type: object
+    VirusScanConfig:
+      additionalProperties: false
+      description: Virus scan configuration
+      example:
+        AllowPasswordProtectedFiles: false
+        Options: Options
+        AllowExecutables: false
+        AllowXmlExternalEntities: false
+        AllowInvalidFiles: false
+        Enabled: true
+        AllowScripts: false
+        AllowUnsafeArchives: false
+        AllowUnwantedAction: false
+        AllowHtml: false
+        AllowMacros: false
+        AllowOleEmbeddedObject: false
+        RestrictFileTypes: ".pdf,.docx,.png"
+        AllowInsecureDeserialization: false
+      properties:
+        Enabled:
+          description: Enable virus scanning
+          example: true
+          type: boolean
+        AllowExecutables:
+          description: Allow executable files
+          example: false
+          type: boolean
+        AllowInvalidFiles:
+          description: Allow invalid files
+          example: false
+          type: boolean
+        AllowScripts:
+          description: Allow script files
+          example: false
+          type: boolean
+        AllowPasswordProtectedFiles:
+          description: Allow password-protected files
+          example: false
+          type: boolean
+        AllowMacros:
+          description: Allow files containing macros
+          example: false
+          type: boolean
+        AllowXmlExternalEntities:
+          description: Allow XML external entities
+          example: false
+          type: boolean
+        AllowInsecureDeserialization:
+          description: Allow insecure deserialization
+          example: false
+          type: boolean
+        AllowHtml:
+          description: Allow HTML content
+          example: false
+          type: boolean
+        AllowUnsafeArchives:
+          description: Allow unsafe archives
+          example: false
+          type: boolean
+        AllowOleEmbeddedObject:
+          description: Allow OLE embedded objects
+          example: false
+          type: boolean
+        AllowUnwantedAction:
+          description: Allow unwanted actions
+          example: false
+          type: boolean
+        RestrictFileTypes:
+          description: Restrict to specific file types (comma-separated extensions)
+          example: ".pdf,.docx,.png"
+          type: string
+        Options:
+          description: Comma-separated scan options
+          type: string
+      type: object
+    VirusScanContentInfo:
+      additionalProperties: false
+      description: Additional content information from virus scan
+      example:
+        Hash_SHA1: Hash_SHA1
+        ContainsJSON: true
+        IsAuthenticodeSigned: true
+        RelevantSubfileName: RelevantSubfileName
+        ContainsImage: true
+        ContainsXML: true
+        RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+      properties:
+        ContainsJSON:
+          description: File contains JSON content
+          type: boolean
+        ContainsXML:
+          description: File contains XML content
+          type: boolean
+        ContainsImage:
+          description: File contains image content
+          type: boolean
+        Hash_SHA1:
+          description: SHA-1 hash of the file
+          type: string
+        RelevantSubfileName:
+          description: Name of relevant subfile
+          type: string
+        RelevantSubfileHash_SHA1:
+          description: SHA-1 hash of relevant subfile
+          type: string
+        IsAuthenticodeSigned:
+          description: File has Authenticode signature
+          type: boolean
+      type: object
+    VirusScanResult:
+      additionalProperties: false
+      description: Virus scan result
+      example:
+        ContainsInvalidFile: true
+        ContainsRestrictedFileFormat: true
+        ContainsUnwantedAction: true
+        ContainsScript: true
+        ContainsOleEmbeddedObject: true
+        FoundViruses:
+        - FileName: FileName
+          VirusName: VirusName
+        - FileName: FileName
+          VirusName: VirusName
+        ContentInformation:
+          Hash_SHA1: Hash_SHA1
+          ContainsJSON: true
+          IsAuthenticodeSigned: true
+          RelevantSubfileName: RelevantSubfileName
+          ContainsImage: true
+          ContainsXML: true
+          RelevantSubfileHash_SHA1: RelevantSubfileHash_SHA1
+        Enabled: true
+        ContainsMacros: true
+        ContainsXmlExternalEntities: true
+        Successful: true
+        CleanResult: true
+        ContainsInsecureDeserialization: true
+        ContainsHtml: true
+        ContainsExecutable: true
+        VerifiedFileFormat: VerifiedFileFormat
+        ContainsUnsafeArchive: true
+        ErrorMessage: ErrorMessage
+        ContainsPasswordProtectedFile: true
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no threats were found
+          type: boolean
+        ContainsExecutable:
+          description: Contains executable content
+          type: boolean
+        ContainsInvalidFile:
+          description: Contains invalid file structure
+          type: boolean
+        ContainsScript:
+          description: Contains script content
+          type: boolean
+        ContainsPasswordProtectedFile:
+          description: File is password-protected
+          type: boolean
+        ContainsRestrictedFileFormat:
+          description: File format is restricted
+          type: boolean
+        ContainsMacros:
+          description: Contains macro code
+          type: boolean
+        ContainsXmlExternalEntities:
+          description: Contains XML external entities
+          type: boolean
+        ContainsInsecureDeserialization:
+          description: Contains insecure deserialization
+          type: boolean
+        ContainsHtml:
+          description: Contains HTML content
+          type: boolean
+        ContainsUnsafeArchive:
+          description: Contains unsafe archive structure
+          type: boolean
+        ContainsOleEmbeddedObject:
+          description: Contains OLE embedded objects
+          type: boolean
+        ContainsUnwantedAction:
+          description: Contains unwanted actions
+          type: boolean
+        VerifiedFileFormat:
+          description: Content-verified file format
+          type: string
+        FoundViruses:
+          description: List of viruses found
+          items:
+            $ref: '#/components/schemas/VirusFound'
+          type: array
+        ContentInformation:
+          $ref: '#/components/schemas/VirusScanContentInfo'
+        ErrorMessage:
+          description: Error message if the scan failed
+          type: string
+      type: object
+    VirusScanUrlResult:
+      additionalProperties: false
+      description: Virus scan result for URL scanning
+      example:
+        WebsiteHttpResponseCode: 0
+        FoundViruses:
+        - FileName: FileName
+          VirusName: VirusName
+        - FileName: FileName
+          VirusName: VirusName
+        Enabled: true
+        Successful: true
+        CleanResult: true
+        WebsiteThreatType: WebsiteThreatType
+      properties:
+        Enabled:
+          description: Whether this scan was enabled
+          type: boolean
+        Successful:
+          description: Whether this scan completed successfully
+          type: boolean
+        CleanResult:
+          description: True if no threats were found
+          type: boolean
+        WebsiteThreatType:
+          description: "Website threat type: None, Malware, Phishing, ForcedDownload,\
+            \ UnableToConnect"
+          type: string
+        FoundViruses:
+          description: List of viruses found
+          items:
+            $ref: '#/components/schemas/VirusFound'
+          type: array
+        WebsiteHttpResponseCode:
+          description: HTTP response code from the website
+          format: int32
+          type: integer
+      type: object
+    _multi_threat_scan_file_post_request:
+      properties:
+        inputFile:
+          description: The file to scan
+          format: binary
+          type: string
+        config:
+          description: Optional JSON scan configuration
+          type: string
+      required:
+      - inputFile
+      type: object
+  securitySchemes:
+    Apikey:
+      description: Apikey
+      in: header
+      name: Apikey
+      type: apiKey
+x-original-swagger-version: "2.0"
+

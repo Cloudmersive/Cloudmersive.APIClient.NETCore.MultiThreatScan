@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo><!-- setting GenerateAssemblyInfo to false causes this bug https://github.com/dotnet/project-system/issues/3934 -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Cloudmersive.APIClient.NETCore.MultiThreatScan</AssemblyName>
+    <PackageId>Cloudmersive.APIClient.NETCore.MultiThreatScan</PackageId>
+    <OutputType>Library</OutputType>
+    <Authors>Cloudmersive LLC</Authors>
+    <Company>Cloudmersive LLC</Company>
+    <AssemblyTitle>Cloudmersive Multi-Threat Scan API Client</AssemblyTitle>
+    <Description>Cloudmersive Multi-Threat Scan allows you to scan files, URLs, and text for multiptle types of threats including viruses, malware, trojans, ransomware, spyware, ai content, fraud, spam, phishing, not-safe-for-work, and many other types of threats.  Multi-factor scanning across many delivery methods including polymorphic and multipartite.  Scanning supports files, archives, and recursive file formats.</Description>
+    <Copyright>Copyright © 2026 Cloudmersive, LLC.</Copyright>
+    <RootNamespace>Cloudmersive.APIClient.NETCore.MultiThreatScan</RootNamespace>
+    <Version>5.0.0</Version>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Cloudmersive.APIClient.NETCore.MultiThreatScan.xml</DocumentationFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Cloudmersive/Cloudmersive.APIClient.NETCore.MultiThreatScan.git</RepositoryUrl><PackageProjectUrl>https://cloudmersive.com/virus-api</PackageProjectUrl><PackageIconUrl>https://cloudmersive.com/images/cmsdk.png</PackageIconUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>Change to HttpClient core</PackageReleaseNotes>
+    <PackageTags>multi-threat scan security malware cloudmersive</PackageTags>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSubTypes" Version="2.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="RestSharp" Version="112.0.0" />
+    <PackageReference Include="Polly" Version="8.1.0" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="System.Web" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Web" />
+  </ItemGroup>
+</Project>
